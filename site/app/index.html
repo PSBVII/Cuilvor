@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cuilvor — your coach</title>
 <meta name="theme-color" content="#050908">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://dktaxuguvfvqfhkjghjc.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'self'">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://dktaxuguvfvqfhkjghjc.supabase.co; img-src 'self' data:; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'self'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -140,12 +143,25 @@
   <div class="tabs">
     <button class="tab on" data-v="v-today"><span class="ic">☀️</span>Today</button>
     <button class="tab" data-v="v-coach"><span class="ic">🧭</span>Coach</button>
+    <button class="tab" data-v="v-train"><span class="ic">🏋️</span>Train</button>
     <button class="tab" data-v="v-labs"><span class="ic">🩸</span>Labs</button>
     <button class="tab" data-v="v-set"><span class="ic">⚙️</span>Settings</button>
   </div>
 
   <!-- TODAY -->
   <div class="view on" id="v-today">
+    <div class="card" id="onboard" style="display:none;margin-bottom:16px">
+      <h3 class="serif" style="font-size:19px">Welcome to Cuilvor 👋</h3>
+      <p class="muted" style="margin:6px 0 4px">Thirty seconds of context makes your coach dramatically better.</p>
+      <label style="display:block;font-size:12px;color:var(--dim);margin:12px 0 5px;text-transform:uppercase;letter-spacing:.08em">Your main goal</label>
+      <input id="ob-goal" placeholder="e.g. stay strong and lean into my 60s; run a sub-50 10k">
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <input id="ob-height" type="number" placeholder="Height (cm)" style="flex:1">
+        <input id="ob-weight" type="number" placeholder="Weight (kg)" style="flex:1">
+      </div>
+      <button class="btn" style="margin-top:12px" onclick="saveOnboard()">Start coaching me</button>
+      <div class="msg" id="obmsg"></div>
+    </div>
     <div class="kpis" id="kpis"></div>
 
     <h2>Quick log</h2>
@@ -154,6 +170,8 @@
       <div class="hint">🎤 Tip: tap the mic on your keyboard to log by voice — it types for you.</div>
       <div class="logrow">
         <button class="btn" id="logbtn" onclick="quickLog()">Log it</button>
+        <button class="btn ghost" id="photobtn" onclick="document.getElementById('photoin').click()">📷 Photo</button>
+        <input id="photoin" type="file" accept="image/*" capture="environment" style="display:none" onchange="photoLog(this)">
       </div>
       <div class="chips" id="logchips"></div>
       <div class="msg" id="logmsg"></div>
@@ -185,6 +203,44 @@
     <div class="msg" id="rmsg"></div>
   </div>
 
+  <!-- TRAIN -->
+  <div class="view" id="v-train">
+    <div class="card">
+      <h3 class="serif" style="font-size:19px">Workout of the day</h3>
+      <p class="muted" style="margin:6px 0 10px">Built from your plan, your last two weeks, and how you've been recovering. Tell it what you fancy — or let it decide.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="btn ghost" onclick="wod('push day')">Push</button>
+        <button class="btn ghost" onclick="wod('pull day')">Pull</button>
+        <button class="btn ghost" onclick="wod('legs day')">Legs</button>
+        <button class="btn ghost" onclick="wod('zone 2 cardio')">Zone 2</button>
+        <button class="btn" id="wodbtn" onclick="wod()">Coach's choice</button>
+      </div>
+      <div class="msg" id="wodmsg"></div>
+      <div id="wodout" style="display:none;margin-top:8px">
+        <div class="when" style="font-size:11px;color:var(--mint);letter-spacing:.14em;text-transform:uppercase" id="wodtype"></div>
+        <h3 class="serif" style="font-size:21px;margin:4px 0 10px" id="wodtitle"></h3>
+        <div id="wodrecov" class="muted" style="margin-bottom:8px"></div>
+        <table id="wodtable"><thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Load</th><th>Rest</th></tr></thead><tbody></tbody></table>
+        <div class="muted" style="margin-top:10px" id="woddrift"></div>
+        <p class="muted" style="margin-top:10px;font-size:12.5px">When you're done, log it in your own words on Today — "did the push day, bench felt heavy, 45 min" — and it counts toward drift tracking.</p>
+      </div>
+    </div>
+    <div class="card set" style="margin-top:14px">
+      <h3 class="serif" style="font-size:17px">Training plan</h3>
+      <div class="muted" id="planview" style="margin:6px 0 10px">No plan set — your coach will infer one until you do.</div>
+      <label>Goal</label><input id="plan-goal" placeholder="e.g. build strength, keep zone-2 base, protect left knee">
+      <label>Days per week</label><input id="plan-days" type="number" min="1" max="7" value="4">
+      <label>Injuries / constraints</label><input id="plan-cons" placeholder="e.g. no barbell squats, home dumbbells to 30kg">
+      <button class="btn" style="margin-top:12px" onclick="savePlan()">Save plan</button>
+      <div class="msg" id="planmsg"></div>
+    </div>
+    <h2>Recent sessions</h2>
+    <div class="card" style="overflow-x:auto">
+      <table id="woHist"><thead><tr><th>When</th><th>Type</th><th>Session</th><th>RPE</th></tr></thead><tbody></tbody></table>
+      <div class="empty" id="woEmpty" style="display:none"><span class="big">🏋️</span>No sessions yet — generate one above, or log one in your own words.</div>
+    </div>
+  </div>
+
   <!-- LABS -->
   <div class="view" id="v-labs">
     <div class="card" style="overflow-x:auto">
@@ -210,6 +266,11 @@
       <h3 class="serif" style="font-size:19px">Account</h3>
       <p class="note" id="whoami"></p>
       <button class="btn ghost" style="margin-top:10px" onclick="signOut()">Sign out</button>
+      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn ghost" onclick="exportData()">Export all my data</button>
+        <button class="btn ghost" style="color:var(--coral);border-color:#5a2e2e" onclick="deleteAccount()">Delete account…</button>
+      </div>
+      <div class="msg" id="acctmsg"></div>
     </div>
     <p class="note" style="text-align:center;margin-top:18px">Cuilvor is a tracking & coaching tool, not medical advice.<br>Out-of-range flags belong in front of your GP.</p>
   </div>
@@ -256,7 +317,7 @@ function boot(session){
   show('app');
   $('today').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'});
   $('whoami').textContent='Signed in as '+(session.user.email||'');
-  loadMetrics(); loadMeals(); loadReview(); loadBio(); loadKeyStatus();
+  loadMetrics(); loadMeals(); loadReview(); loadBio(); loadKeyStatus(); loadWorkouts(); loadPlan(); checkOnboard();
 }
 
 /* quick log -> AI parse via edge function */
@@ -379,6 +440,117 @@ async function saveKey(){
   $('keymsg').textContent=error?error.message:'Saved ✓ — your coach is live. Try the quick log.';
   if(!error){ $('apikey').value=''; loadKeyStatus(); }
 }
+
+/* ---- photo meal logging ---- */
+async function photoLog(inp){
+  const f=inp.files&&inp.files[0]; inp.value=''; if(!f)return;
+  if(!['image/jpeg','image/png','image/webp'].includes(f.type)){ $('logmsg').className='msg err'; $('logmsg').textContent='Use a JPEG, PNG or WebP photo.'; return; }
+  if(f.size>2*1024*1024){ $('logmsg').className='msg err'; $('logmsg').textContent='Photo too big — keep under 2MB.'; return; }
+  const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});
+  const btn=$('photobtn'); btn.disabled=true; btn.textContent='Reading plate…';
+  $('logmsg').className='msg'; $('logmsg').textContent=''; $('logchips').innerHTML='';
+  try{
+    const {data,error}=await Promise.race([
+      db.functions.invoke('parse-log',{body:{image:{data:b64,media_type:f.type},text:$('logtext').value.trim(),local_date:localDay()}}),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timed out — try again.')),90000))]);
+    if(error){let dd='';try{if(error.context&&error.context.text)dd=(JSON.parse(await error.context.text())||{}).message||'';}catch(_){ } throw new Error(dd||error.message);}
+    const d=data||{};
+    if(d.error==='no_key'){ $('logmsg').className='msg err'; $('logmsg').textContent='Add your AI key in Settings first.'; return; }
+    const chips=((d.parsed||{}).meals||[]).map(m=>`<span class="chip"><b>${esc(m.food)}</b>${n2(m.kcal)?` ${Math.round(n2(m.kcal))} kcal`:''}</span>`);
+    $('logchips').innerHTML=chips.join('');
+    $('logmsg').textContent=`Photo logged ✓ — ${d.summary?d.summary.kcal+' kcal, '+d.summary.protein_g+'g protein':''}`;
+    $('logtext').value=''; loadMeals(); loadMetrics();
+  }catch(e){ $('logmsg').className='msg err'; $('logmsg').textContent=e.message||'Photo parse failed.'; }
+  finally{ btn.disabled=false; btn.textContent='📷 Photo'; }
+}
+
+/* ---- workout of the day ---- */
+async function wod(request){
+  const btn=$('wodbtn'); btn.disabled=true; $('wodmsg').className='msg'; $('wodmsg').textContent='Coaching… ~15s';
+  try{
+    const {data,error}=await Promise.race([
+      db.functions.invoke('workout-of-day',{body:{request:request||undefined}}),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timed out — try again.')),90000))]);
+    if(error){let dd='';try{if(error.context&&error.context.text)dd=(JSON.parse(await error.context.text())||{}).message||'';}catch(_){ } throw new Error(dd||error.message);}
+    const d=data||{};
+    if(d.error==='no_key'){ $('wodmsg').className='msg err'; $('wodmsg').textContent='Add your AI key in Settings to unlock the workout coach.'; return; }
+    if(d.error){ $('wodmsg').className='msg err'; $('wodmsg').textContent=d.message||d.error; return; }
+    const w=d.workout; $('wodmsg').textContent='';
+    $('wodout').style.display='block';
+    $('wodtype').textContent=(w.session_type||'').replace('_',' ')+' · ~'+w.duration_min+' min';
+    $('wodtitle').textContent=w.title;
+    $('wodrecov').textContent=w.recovery_note||'';
+    $('wodtable').querySelector('tbody').innerHTML=(w.exercises||[]).map(e=>
+      `<tr><td>${esc(e.name)}${e.notes?`<div style="font-size:11px;color:var(--dim)">${esc(e.notes)}</div>`:''}</td><td>${esc(e.sets)}</td><td>${esc(e.reps)}</td><td>${esc(e.load_hint)}</td><td>${esc(e.rest_s)}s</td></tr>`).join('');
+    $('woddrift').textContent=w.drift_note?('📈 '+w.drift_note):'';
+    loadWorkouts();
+  }catch(e){ $('wodmsg').className='msg err'; $('wodmsg').textContent=e.message||'Generation failed.'; }
+  finally{ btn.disabled=false; }
+}
+async function savePlan(){
+  const goal=$('plan-goal').value.trim();
+  if(!goal){ $('planmsg').className='msg err'; $('planmsg').textContent='Give your plan a goal.'; return; }
+  try{
+    const {error}=await db.functions.invoke('workout-of-day',{body:{request:'just save my plan, and suggest nothing heavy today',plan:{goal,days_per_week:+$('plan-days').value||3,constraints_notes:$('plan-cons').value.trim()}}});
+    $('planmsg').className='msg'; $('planmsg').textContent='Plan saved ✓ — drift tracking starts now.';
+    loadPlan();
+  }catch(e){ $('planmsg').className='msg err'; $('planmsg').textContent='Could not save plan.'; }
+}
+async function loadPlan(){
+  const {data}=await db.from('v_health_training_plans').select('*').limit(1);
+  if(data&&data[0]){ const t=data[0];
+    $('planview').textContent=`${t.goal} · ${t.days_per_week||'?'}×/week${t.constraints_notes?' · '+t.constraints_notes:''}`;
+    $('plan-goal').value=t.goal||''; if(t.days_per_week)$('plan-days').value=t.days_per_week; $('plan-cons').value=t.constraints_notes||''; }
+}
+async function loadWorkouts(){
+  const {data}=await db.from('v_health_workouts').select('ts,session_type,title,rpe,planned').order('ts',{ascending:false}).limit(10);
+  const rows=data||[];
+  $('woEmpty').style.display=rows.length?'none':'block';
+  $('woHist').style.display=rows.length?'table':'none';
+  $('woHist').querySelector('tbody').innerHTML=rows.map(w=>
+    `<tr><td style="color:var(--dim)">${new Date(w.ts).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})}</td><td>${esc((w.session_type||'').replace('_',' '))}${w.planned?' <span class="pill p-dim">planned</span>':''}</td><td>${esc(w.title||'')}</td><td>${w.rpe??'—'}</td></tr>`).join('');
+}
+
+/* ---- onboarding ---- */
+async function checkOnboard(){
+  try{
+    const {data}=await db.from('profiles').select('goal').limit(1);
+    if(data&&data[0]&&!data[0].goal) $('onboard').style.display='block';
+  }catch(e){}
+}
+async function saveOnboard(){
+  const goal=$('ob-goal').value.trim(); if(!goal){ $('obmsg').className='msg err'; $('obmsg').textContent='One sentence on the goal — it steers everything.'; return; }
+  const {data:{user}}=await db.auth.getUser();
+  const patch={goal}; const h=+$('ob-height').value; if(h>80&&h<260)patch.height_cm=h;
+  const {error}=await db.from('profiles').update(patch).eq('id',user.id);
+  const w=+$('ob-weight').value;
+  if(!error&&w>20&&w<400){ try{ await db.rpc('log_health_entry',{p_raw:'weight '+w+'kg (onboarding)',p_type:'note'}); }catch(e){} }
+  if(error){ $('obmsg').className='msg err'; $('obmsg').textContent=error.message; }
+  else { $('onboard').style.display='none'; }
+}
+
+/* ---- export & delete ---- */
+async function exportData(){
+  $('acctmsg').textContent='Gathering everything…';
+  const out={exported_at:new Date().toISOString()};
+  for(const v of ['v_health_daily_metrics','v_health_meals','v_health_med_events','v_health_workouts','v_health_biomarkers','v_health_targets','v_health_weekly_reviews','v_health_training_plans']){
+    const {data}=await db.from(v).select('*').limit(10000); out[v.replace('v_health_','')]=data||[];
+  }
+  const blob=new Blob([JSON.stringify(out,null,1)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='cuilvor-export-'+localDay()+'.json'; a.click();
+  $('acctmsg').textContent='Export downloaded ✓ — it\'s all yours.';
+}
+async function deleteAccount(){
+  if(!confirm('Delete your Cuilvor account and ALL health data, permanently? Consider exporting first.'))return;
+  if(!confirm('Last check — this cannot be undone. Delete everything?'))return;
+  const {error}=await db.rpc('delete_my_account');
+  if(error){ $('acctmsg').textContent=error.message; return; }
+  await db.auth.signOut(); location.href='/';
+}
+
+/* ---- PWA ---- */
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
+
 init();
 </script>
 </body>
