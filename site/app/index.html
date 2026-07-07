@@ -422,7 +422,7 @@ async function loadBio(){
   $('bioTable').style.display=rows.length?'table':'none';
   $('bioTable').querySelector('tbody').innerHTML=rows.map(b=>{
     const cls=b.flag==='high'||b.flag==='critical'?'p-high':b.flag==='low'?'p-low':b.flag==='normal'?'p-ok':'p-dim';
-    return `<tr><td style="color:var(--dim)">${esc(b.test_date)}</td><td>${esc(b.name)}</td><td>${n2(b.value)??esc(b.value_text||'')} ${esc(b.unit||'')}</td><td style="color:var(--dim)">${n2(b.ref_low)??''}–${n2(b.ref_high)??''}</td><td><span class="pill ${cls}">${b.flag||'—'}</span></td></tr>`;
+    return `<tr><td style="color:var(--dim)">${esc(b.test_date)}</td><td>${esc(b.name)}</td><td>${n2(b.value)??esc(b.value_text||'')} ${esc(b.unit||'')}</td><td style="color:var(--dim)">${n2(b.ref_low)??''}–${n2(b.ref_high)??''}</td><td><span class="pill ${cls}">${esc(b.flag)||'—'}</span></td></tr>`;
   }).join('');
 }
 async function loadKeyStatus(){
@@ -491,10 +491,14 @@ async function savePlan(){
   const goal=$('plan-goal').value.trim();
   if(!goal){ $('planmsg').className='msg err'; $('planmsg').textContent='Give your plan a goal.'; return; }
   try{
-    const {error}=await db.functions.invoke('workout-of-day',{body:{request:'just save my plan, and suggest nothing heavy today',plan:{goal,days_per_week:+$('plan-days').value||3,constraints_notes:$('plan-cons').value.trim()}}});
+    const {data:{user}}=await db.auth.getUser();
+    const row={user_id:user.id,goal,days_per_week:+$('plan-days').value||3,constraints_notes:$('plan-cons').value.trim(),updated_at:new Date().toISOString()};
+    const {data:upd,error:e1}=await db.from('v_health_training_plans').update(row).eq('user_id',user.id).select();
+    if(e1) throw e1;
+    if(!upd||!upd.length){ const {error:e2}=await db.from('v_health_training_plans').insert(row); if(e2) throw e2; }
     $('planmsg').className='msg'; $('planmsg').textContent='Plan saved ✓ — drift tracking starts now.';
     loadPlan();
-  }catch(e){ $('planmsg').className='msg err'; $('planmsg').textContent='Could not save plan.'; }
+  }catch(e){ $('planmsg').className='msg err'; $('planmsg').textContent=e.message||'Could not save plan.'; }
 }
 async function loadPlan(){
   const {data}=await db.from('v_health_training_plans').select('*').limit(1);
@@ -533,17 +537,21 @@ async function saveOnboard(){
 async function exportData(){
   $('acctmsg').textContent='Gathering everything…';
   const out={exported_at:new Date().toISOString()};
-  for(const v of ['v_health_daily_metrics','v_health_meals','v_health_med_events','v_health_workouts','v_health_biomarkers','v_health_targets','v_health_weekly_reviews','v_health_training_plans']){
-    const {data}=await db.from(v).select('*').limit(10000); out[v.replace('v_health_','')]=data||[];
+  let missing=[];
+  for(const v of ['v_health_daily_metrics','v_health_meals','v_health_med_events','v_health_workouts','v_health_biomarkers','v_health_targets','v_health_weekly_reviews','v_health_training_plans','v_health_log_entries']){
+    const {data,error}=await db.from(v).select('*').limit(10000);
+    if(error){missing.push(v);} out[v.replace('v_health_','')]=data||[];
   }
+  if(missing.length) out._incomplete = missing;
   const blob=new Blob([JSON.stringify(out,null,1)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='cuilvor-export-'+localDay()+'.json'; a.click();
   $('acctmsg').textContent='Export downloaded ✓ — it\'s all yours.';
 }
 async function deleteAccount(){
   if(!confirm('Delete your Cuilvor account and ALL health data, permanently? Consider exporting first.'))return;
-  if(!confirm('Last check — this cannot be undone. Delete everything?'))return;
-  const {error}=await db.rpc('delete_my_account');
+  const phrase=prompt('Type exactly: DELETE EVERYTHING');
+  if(phrase!=='DELETE EVERYTHING'){ $('acctmsg').textContent='Phrase didn\'t match — nothing deleted.'; return; }
+  const {error}=await db.rpc('delete_my_account',{p_confirm:phrase});
   if(error){ $('acctmsg').textContent=error.message; return; }
   await db.auth.signOut(); location.href='/';
 }
