@@ -40,6 +40,8 @@
   .logo i{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   .navcta{font-size:13.5px;font-weight:600;color:#06110c;background:var(--grad);padding:9px 18px;border-radius:99px;text-decoration:none;transition:transform .25s}
   .navcta:hover{transform:scale(1.05)}
+  .navlink{font-size:13.5px;color:var(--dim);text-decoration:none}
+  @media(max-width:640px){.navlink{display:none}}
 
   /* hero */
   header{position:relative;min-height:min(100svh,880px);display:flex;align-items:center;z-index:1}
@@ -54,7 +56,7 @@
   .sub b{color:var(--ink);font-weight:600}
 
   /* email capture */
-  .cap{display:flex;gap:10px;max-width:480px;position:relative}
+  .cap{display:flex;gap:10px;max-width:480px;position:relative;scroll-margin-top:110px}
   .cap input{flex:1;background:#0c1714cc;border:1px solid #223b32;border-radius:14px;padding:16px 18px;font:15px Inter;color:var(--ink);outline:none;transition:border .3s}
   .cap input:focus{border-color:var(--mint)}
   .cap button{background:var(--grad);border:0;border-radius:14px;padding:16px 26px;font:600 15px Inter;color:#06110c;cursor:pointer;white-space:nowrap;transition:transform .25s,box-shadow .25s;animation:ctapulse 3.2s ease-in-out infinite}
@@ -113,7 +115,7 @@
   .stp:last-child{border-bottom:1px solid var(--line)}
   .stp::before{content:'0' counter(s);font-family:Fraunces,serif;font-size:34px;color:#2c473d}
   .stp h3{font-size:20px;margin-bottom:6px} .stp p{color:var(--dim);font-size:15px;max-width:560px}
-  .stp code{background:#0f1f19;border:1px solid #1c332a;padding:2px 9px;border-radius:8px;font-size:13px;color:var(--mint)}
+  .stp code{display:inline-block;margin-top:10px;background:#0f1f19;border:1px solid #1c332a;padding:4px 12px;border-radius:99px;font:600 11px Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--mint);white-space:nowrap}
 
   /* final cta */
   .final{text-align:center;padding:130px 0 120px}
@@ -135,9 +137,9 @@
 <nav><div class="wrap">
   <div class="logo">cuil<i>vor</i></div>
   <span style="margin-left:auto;display:flex;align-items:center;gap:20px">
-    <a href="product-tour.html" style="font-size:13.5px;color:var(--dim);text-decoration:none">See inside ↗</a>
-    <a href="compare/" style="font-size:13.5px;color:var(--dim);text-decoration:none">Compare</a>
-    <a href="app/" style="font-size:13.5px;color:var(--dim);text-decoration:none">Sign in</a>
+    <a href="product-tour.html" class="navlink">See inside ↗</a>
+    <a href="compare/" class="navlink">Compare</a>
+    <a href="app/" style="font-size:13.5px;color:var(--dim);text-decoration:none;white-space:nowrap">Sign in</a>
     <a class="navcta" href="#join">Get early access</a>
   </span>
 </div></nav>
@@ -154,14 +156,14 @@
         <button onclick="join()">Join the waitlist</button>
       </div>
       <div class="capmsg" id="capmsg"></div>
-      <div class="tiny">Early access first · App Store launch later · never spam, ever</div>
+      <div class="tiny">Early access first · App Store launch later</div>
     </div>
   </div>
   <div class="scrollhint">scroll</div>
 </header>
 
 <div class="ticker"><div class="tk" id="tk">
-  <span>OURA</span><span>WHOOP</span><span>APPLE&nbsp;HEALTH</span><span>STRAVA</span><span>GARMIN</span><span>WITHINGS</span><span>FUNCTION&nbsp;HEALTH</span><span>ANY&nbsp;LAB&nbsp;PDF</span><span>ALMA</span><span>POLAR</span><span><b>+ your own words</b></span>
+  <span>OURA</span><span>WHOOP</span><span>APPLE&nbsp;HEALTH</span><span>STRAVA</span><span>GARMIN</span><span>WITHINGS</span><span>FUNCTION&nbsp;HEALTH</span><span>ANY&nbsp;LAB&nbsp;PDF</span><span>ALMA</span><span>POLAR</span><span><b>NHS RESULTS — EVEN SCREENSHOTS</b></span>
 </div></div>
 
 <section>
@@ -230,10 +232,37 @@
   </div>
 </section>
 
-<footer><div class="wrap">
-  <span><b class="logo" style="font-size:15px">cuil<i>vor</i></b> · your biology, coached</span>
-  <span>Not medical advice — flags go to your GP. · © 2026</span>
-</div></footer>
+<footer style="border-top:1px solid var(--line);padding:44px 0 36px;position:relative;z-index:1;font-size:13.5px">
+<div class="wrap">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:28px">
+    <div>
+      <div class="logo" style="font-size:18px">cuil<i>vor</i></div>
+      <p style="color:#5c6f68;margin-top:8px;max-width:260px">The AI longevity coach that reads your sleep, food, training and blood work — from any wearable and any lab — and tells you the one or two changes that matter each week.</p>
+    </div>
+    <div>
+      <div style="color:var(--dim);font-weight:600;margin-bottom:8px">Product</div>
+      <a href="product-tour.html" style="display:block;color:#5c6f68;text-decoration:none;padding:3px 0">Inside the app</a>
+      <a href="app/" style="display:block;color:#5c6f68;text-decoration:none;padding:3px 0">Sign in</a>
+      <a href="#join" style="display:block;color:#5c6f68;text-decoration:none;padding:3px 0">Early access</a>
+    </div>
+    <div>
+      <div style="color:var(--dim);font-weight:600;margin-bottom:8px">Compare</div>
+      <a href="compare/cuilvor-vs-whoop.html" style="display:block;color:#5c6f68;text-decoration:none;padding:3px 0">Cuilvor vs Whoop</a>
+      <a href="compare/cuilvor-vs-oura.html" style="display:block;color:#5c6f68;text-decoration:none;padding:3px 0">Cuilvor vs Oura</a>
+      <a href="compare/cuilvor-vs-function-health.html" style="display:block;color:#5c6f68;text-decoration:none;padding:3px 0">Cuilvor vs Function Health</a>
+      <a href="compare/cuilvor-vs-longevity-coach.html" style="display:block;color:#5c6f68;text-decoration:none;padding:3px 0">Cuilvor vs a $15k coach</a>
+    </div>
+    <div>
+      <div style="color:var(--dim);font-weight:600;margin-bottom:8px">Company</div>
+      <a href="legal/privacy.html" style="display:block;color:#5c6f68;text-decoration:none;padding:3px 0">Privacy policy</a>
+      <a href="legal/terms.html" style="display:block;color:#5c6f68;text-decoration:none;padding:3px 0">Terms of use</a>
+      <a href="mailto:hello@cuilvor.com" style="display:block;color:#5c6f68;text-decoration:none;padding:3px 0">Contact</a>
+      <a href="mailto:acquisitions@cuilvor.com?subject=Acquiring%20Cuilvor" style="display:block;color:var(--mint);text-decoration:none;padding:3px 0">Interested in acquiring Cuilvor? →</a>
+    </div>
+  </div>
+  <p style="color:#3d4f47;margin-top:32px;font-size:12px">Cuilvor is a health tracking and coaching tool, not a medical device and not medical advice — out-of-range results are flagged for discussion with your own doctor. © 2026 Cuilvor.</p>
+</div>
+</footer>
 
 <script>
 /* content is visible without JS; only hide-for-reveal once JS is confirmed alive */
