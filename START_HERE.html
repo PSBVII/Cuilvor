@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Longevity Coach — Start Here</title>
+<style>
+  :root{
+    --bg:#0b0f11; --bg2:#10161a; --card:#151d22; --line:#22303a; --text:#eef3f2;
+    --dim:#8ba39c; --mint:#5ad8a6; --blue:#5aa9e8; --gold:#e8c05a; --coral:#e8755a;
+    --grad:linear-gradient(135deg,#5ad8a6 0%,#5aa9e8 100%);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font:16px/1.65 -apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 28px}
+  section{padding:72px 0;border-bottom:1px solid var(--line)}
+
+  /* hero */
+  .hero{padding:110px 0 90px;text-align:center;position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero::before{content:'';position:absolute;inset:-40% -20% auto;height:120%;background:radial-gradient(ellipse at 50% 0%,#5ad8a622 0%,#5aa9e814 40%,transparent 70%);pointer-events:none}
+  .kicker{display:inline-block;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--mint);border:1px solid #5ad8a644;border-radius:99px;padding:6px 16px;margin-bottom:26px}
+  h1{font-size:clamp(38px,6vw,64px);line-height:1.05;font-weight:750;letter-spacing:-.02em}
+  h1 .g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{max-width:640px;margin:22px auto 0;color:var(--dim);font-size:18px}
+  .price{display:flex;gap:18px;justify-content:center;margin-top:40px;flex-wrap:wrap}
+  .price .p{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 30px;min-width:200px}
+  .price .n{font-size:30px;font-weight:700} .price .l{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
+  .strike{text-decoration:line-through;color:var(--coral)}
+
+  h2{font-size:30px;font-weight:700;letter-spacing:-.01em;margin-bottom:8px}
+  .lead{color:var(--dim);max-width:680px;margin-bottom:36px}
+  .num{font-size:13px;color:var(--mint);letter-spacing:.18em;text-transform:uppercase;display:block;margin-bottom:10px}
+
+  .cards{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .card h3{font-size:16px;margin:12px 0 6px} .card p{font-size:14px;color:var(--dim)}
+  .icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;background:#5ad8a618;border:1px solid #5ad8a633}
+
+  .flow{background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:28px;overflow-x:auto}
+  svg text{font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+
+  /* chat bubbles */
+  .chat{display:flex;flex-direction:column;gap:14px;max-width:640px}
+  .bubble{padding:14px 18px;border-radius:18px;font-size:15px;max-width:85%}
+  .you{background:var(--grad);color:#07130d;font-weight:550;align-self:flex-end;border-bottom-right-radius:6px}
+  .coach{background:var(--card);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:6px}
+  .coach b{color:var(--mint)}
+
+  /* timeline */
+  .week{display:grid;gap:0;border-left:2px solid var(--line);margin-left:8px}
+  .day{position:relative;padding:0 0 30px 30px}
+  .day::before{content:'';position:absolute;left:-8px;top:5px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:3px solid var(--mint)}
+  .day.sun::before{background:var(--mint);box-shadow:0 0 18px #5ad8a688}
+  .day h4{font-size:15px} .day p{font-size:14px;color:var(--dim)}
+  .day .tag{font-size:11px;color:var(--mint);letter-spacing:.14em;text-transform:uppercase}
+
+  /* connector table */
+  table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);border-radius:16px;overflow:hidden}
+  th,td{padding:13px 16px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{background:var(--bg2);color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.1em}
+  tr:last-child td{border-bottom:0}
+  .pill{display:inline-block;padding:2px 11px;border-radius:99px;font-size:12px;font-weight:600}
+  .live{background:#5ad8a61f;color:var(--mint);border:1px solid #5ad8a640}
+  .step{background:#5aa9e81f;color:var(--blue);border:1px solid #5aa9e840}
+  .pdf{background:#e8c05a1f;color:var(--gold);border:1px solid #e8c05a40}
+
+  .check{list-style:none;counter-reset:c}
+  .check li{counter-increment:c;position:relative;padding:16px 16px 16px 62px;background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;font-size:15px}
+  .check li::before{content:counter(c);position:absolute;left:16px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:var(--grad);color:#07130d;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .check .muted{color:var(--dim);font-size:13px;display:block}
+
+  .foot{padding:50px 0;text-align:center;color:var(--dim);font-size:13px}
+  .foot b{color:var(--mint)}
+  @media(max-width:640px){section{padding:48px 0}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="kicker">Paul's Personal Health OS</span>
+    <h1>You just fired your<br><span class="g">$15,000 longevity coach.</span></h1>
+    <p>Every data stream you already own — sleep, food, training, blood work — flowing into one AI coach that watches the trends and tells you the one or two things to change each week.</p>
+    <div class="price">
+      <div class="p"><div class="n strike">$15,000/yr</div><div class="l">Concierge clinic</div></div>
+      <div class="p"><div class="n" style="background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">~$0/mo</div><div class="l">This build · your data</div></div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <span class="num">01 · The system</span>
+    <h2>How it works</h2>
+    <p class="lead">Four skills, one database, one weekly ritual. Everything flows into Supabase; the coach reads it all and comes back with what matters.</p>
+    <div class="flow">
+      <svg viewBox="0 0 980 360" width="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5ad8a6"/><stop offset="1" stop-color="#5aa9e8"/>
+          </linearGradient>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#3d5460"/>
+          </marker>
+        </defs>
+        <!-- inputs -->
+        <g font-size="13" fill="#eef3f2">
+          <rect x="20" y="20" width="200" height="64" rx="12" fill="#151d22" stroke="#22303a"/>
+          <text x="40" y="47" font-weight="600">💬  You, in plain English</text>
+          <text x="40" y="68" fill="#8ba39c" font-size="11.5">"ate a cheeseburger, slept 7h"</text>
+
+          <rect x="20" y="104" width="200" height="64" rx="12" fill="#151d22" stroke="#22303a"/>
+          <text x="40" y="131" font-weight="600">🩸  Lab PDFs</text>
+          <text x="40" y="152" fill="#8ba39c" font-size="11.5">NHS, Function, any clinic</text>
+
+          <rect x="20" y="188" width="200" height="64" rx="12" fill="#151d22" stroke="#22303a"/>
+          <text x="40" y="215" font-weight="600">⌚  Wearables</text>
+          <text x="40" y="236" fill="#8ba39c" font-size="11.5">Oura · Whoop · Strava · Alma</text>
+
+          <rect x="20" y="272" width="200" height="64" rx="12" fill="#151d22" stroke="#22303a"/>
+          <text x="40" y="299" font-weight="600">📱  The app</text>
+          <text x="40" y="320" fill="#8ba39c" font-size="11.5">quick-log box</text>
+        </g>
+        <!-- arrows in -->
+        <g stroke="#3d5460" stroke-width="2" fill="none" marker-end="url(#arr)">
+          <path d="M220,52 C300,52 300,150 370,165"/>
+          <path d="M220,136 C290,136 300,160 370,175"/>
+          <path d="M220,220 C290,220 300,196 370,185"/>
+          <path d="M220,304 C300,304 300,210 370,195"/>
+        </g>
+        <!-- skills -->
+        <g font-size="13" fill="#eef3f2">
+          <rect x="372" y="128" width="220" height="110" rx="14" fill="#151d22" stroke="url(#g)" stroke-width="1.6"/>
+          <text x="392" y="156" font-weight="700" fill="url(#g)">CLAUDE · SKILLS</text>
+          <text x="392" y="180" font-size="12">log-health · parse-labs</text>
+          <text x="392" y="200" font-size="12">weekly-health-review</text>
+          <text x="392" y="220" font-size="12">longevity-protocol</text>
+        </g>
+        <path d="M592,183 L662,183" stroke="#3d5460" stroke-width="2" marker-end="url(#arr)"/>
+        <!-- db -->
+        <g font-size="13" fill="#eef3f2">
+          <rect x="664" y="128" width="140" height="110" rx="14" fill="#151d22" stroke="#22303a"/>
+          <ellipse cx="734" cy="152" rx="34" ry="9" fill="none" stroke="#5aa9e8"/>
+          <path d="M700,152 v34 a34,9 0 0 0 68,0 v-34" fill="none" stroke="#5aa9e8"/>
+          <text x="734" y="216" text-anchor="middle" font-weight="600">Supabase</text>
+          <text x="734" y="232" text-anchor="middle" fill="#8ba39c" font-size="11">health schema</text>
+        </g>
+        <path d="M804,183 L874,183" stroke="#3d5460" stroke-width="2" marker-end="url(#arr)"/>
+        <!-- output -->
+        <g font-size="13" fill="#eef3f2">
+          <rect x="876" y="106" width="90" height="154" rx="14" fill="url(#g)"/>
+          <text x="921" y="140" text-anchor="middle" font-weight="800" fill="#07130d" font-size="26">☀️</text>
+          <text x="921" y="172" text-anchor="middle" font-weight="700" fill="#07130d">Sunday</text>
+          <text x="921" y="190" text-anchor="middle" font-weight="700" fill="#07130d">6pm</text>
+          <text x="921" y="216" text-anchor="middle" fill="#0a2a1c" font-size="11">weekly review</text>
+          <text x="921" y="232" text-anchor="middle" fill="#0a2a1c" font-size="11">1–2 changes</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="num">02 · Installed today</span>
+    <h2>What's already running</h2>
+    <p class="lead">All of this is live right now — no wearables, no logins, no subscriptions.</p>
+    <div class="cards">
+      <div class="card"><div class="icon">🎙️</div><h3>log-health</h3><p>Tell Claude what you ate, took, lifted or felt — it parses everything into structured rows. No forms, ever.</p></div>
+      <div class="card"><div class="icon">🩸</div><h3>parse-labs</h3><p>Drop any blood-test PDF into a chat. Every biomarker extracted, flagged against ranges, trended across tests.</p></div>
+      <div class="card"><div class="icon">📊</div><h3>weekly-health-review</h3><p>The $15k job: reads your whole week, compares it to the last month and your targets, prescribes 1–2 changes.</p></div>
+      <div class="card"><div class="icon">🧬</div><h3>longevity-protocol</h3><p>Your standing context — goals, injuries, preferences, coaching rules. The coach's memory of who you are.</p></div>
+      <div class="card"><div class="icon">🗄️</div><h3>Supabase database</h3><p>Seven tables: daily metrics, logs, meals, meds, biomarkers, targets, reviews. Yours forever, exportable anytime.</p></div>
+      <div class="card"><div class="icon">⏰</div><h3>Sunday 6pm schedule</h3><p>The review runs itself every week (while the Claude app is open) and saves every report to the database.</p></div>
+      <div class="card"><div class="icon">📱</div><h3>The app</h3><p>Magic-link login, sleep &amp; HRV charts, quick-log, flagged biomarkers. One file — deploys to Vercel whenever you say go.</p></div>
+      <div class="card"><div class="icon">🎯</div><h3>6 starter targets</h3><p>Sleep 7.5–9h, HRV trend, resting HR &lt;60, protein 120g+, 8k steps, 150 zone-2 min/wk. All editable by asking.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="num">03 · Daily use</span>
+    <h2>Just talk to it</h2>
+    <p class="lead">There is no interface to learn. The interface is a sentence.</p>
+    <div class="chat">
+      <div class="bubble you">Had a McDonald's cheeseburger and a caramel Grenade bar, took my omega-3 and vitamin D</div>
+      <div class="bubble coach">Logged ✓ — <b>~522 kcal, 37g protein</b> (cheeseburger UK: ~301 kcal/15g · Grenade Caramel Chaos: ~221 kcal/22g, cross-checked against Open Food Facts) + 2 supplements. Today: 1,730 kcal / 96g protein.</div>
+      <div class="bubble you">Slept about 6 and a half hours, feeling rough, skipped the gym</div>
+      <div class="bubble coach">Logged ✓ — sleep 6.5h, energy low, no training. That's 3 short nights this week — it'll show up in Sunday's review.</div>
+      <div class="bubble you">*drops NHS blood results PDF into chat*</div>
+      <div class="bubble coach">22 biomarkers extracted ✓ — 20 in range. <b>Ferritin low</b> (28 µg/L, ref 30–400), <b>vitamin D borderline</b>. Both trendable now; worth mentioning ferritin to your GP.</div>
+      <div class="bubble you">How am I doing?</div>
+      <div class="bubble coach">Runs the full weekly review on demand — trends, adherence, and this week's 1–2 changes.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="num">04 · The ritual</span>
+    <h2>A week in the life</h2>
+    <div class="week">
+      <div class="day"><span class="tag">Mon–Sat</span><h4>Live your life, narrate the highlights</h4><p>Voice-note or type meals, training, sleep, how you feel. 5 seconds each. Miss days? Fine — gaps are data too.</p></div>
+      <div class="day"><span class="tag">Anytime</span><h4>Blood test lands</h4><p>Drop the PDF in. It joins every previous panel so trends build across months and labs.</p></div>
+      <div class="day sun"><span class="tag">Sunday 18:00</span><h4>The review arrives</h4><p>"Where you are. What's trending. Change these two things this week." Short enough to actually read; specific enough to actually do.</p></div>
+      <div class="day"><span class="tag">Next Sunday</span><h4>The loop closes</h4><p>The coach checks whether last week's changes happened and whether they worked. That accountability is the entire product.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="num">05 · Expansion</span>
+    <h2>Plug in the rest of your life</h2>
+    <p class="lead">There's no meaningful cap on connectors — add as many MCP servers as you like (Claude plans allow many custom connectors; each is a one-time OAuth). Anything with an API or an export can feed the coach.</p>
+    <table>
+      <tr><th>Source</th><th>What it adds</th><th>Status</th></tr>
+      <tr><td><b>Chat + PDFs</b> (today)</td><td>Food, meds, training, sleep, labs, symptoms</td><td><span class="pill live">Live now</span></td></tr>
+      <tr><td><b>Strava</b></td><td>Every workout, auto — trends, zones, readiness</td><td><span class="pill step">1-click connect</span></td></tr>
+      <tr><td><b>Alma</b></td><td>Meal logging with photos/voice, micronutrients</td><td><span class="pill step">1-click connect</span></td></tr>
+      <tr><td><b>Function Health / HealthEx</b></td><td>100+ biomarkers, structured, official connectors</td><td><span class="pill step">1-click connect</span></td></tr>
+      <tr><td><b>Oura · Whoop · Withings · Polar</b></td><td>Sleep stages, HRV, recovery — automatic daily</td><td><span class="pill step">~15-min MCP setup</span></td></tr>
+      <tr><td><b>Apple Watch</b></td><td>Everything HealthKit sees, via Health Auto Export</td><td><span class="pill step">~15-min setup</span></td></tr>
+      <tr><td><b>Garmin · aggregators</b> (Terra, Open Wearables)</td><td>All devices through one connector</td><td><span class="pill step">Setup</span></td></tr>
+      <tr><td><b>Any other lab / clinic / NHS portal</b></td><td>PDF in, biomarkers out</td><td><span class="pill pdf">Works via PDF</span></td></tr>
+      <tr><td><b>MyFitnessPal · Cronometer</b></td><td>No public API — CSV export or unofficial bridges only</td><td><span class="pill pdf">Workaround</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="num">06 · Honest limits</span>
+    <h2>What's stopping it tracking <i>everything</i>?</h2>
+    <p class="lead">Less than you'd think. Three real constraints:</p>
+    <div class="cards">
+      <div class="card"><div class="icon">🔌</div><h3>Data you can't reach</h3><p>A few apps lock their data (no API, no export). Everything else — API, MCP, PDF, CSV, or a sentence from you — gets in.</p></div>
+      <div class="card"><div class="icon">✍️</div><h3>Logging friction</h3><p>The coach only knows what arrives. Wearables remove friction for sleep/training; food still needs a 5-second sentence unless you connect Alma.</p></div>
+      <div class="card"><div class="icon">🧪</div><h3>Estimation, not magic</h3><p>Macro estimates for unlabelled food are ~±15%. Branded items (that UK cheeseburger, that Grenade bar) are near-exact via published nutrition data. Precision follows effort.</p></div>
+    </div>
+    <p style="margin-top:26px;color:var(--dim)">Workout tracking and programming? Already in scope — log sessions in chat (or connect Strava) and the weekly review adjusts training suggestions against your recovery and zone-2 target. And one boundary by design: it flags what a doctor should see; it never plays doctor.</p>
+  </div>
+</section>
+
+<section style="border-bottom:0">
+  <div class="wrap">
+    <span class="num">07 · Start</span>
+    <h2>Your first week</h2>
+    <ol class="check">
+      <li>Log today's food and sleep in one sentence to Claude. <span class="muted">That's the whole habit.</span></li>
+      <li>Drop your most recent blood test PDF into a chat. <span class="muted">Instant baseline, even if it's old.</span></li>
+      <li>Tell Claude your goals + injuries so the protocol knows you. <span class="muted">"Update my longevity protocol: …"</span></li>
+      <li>Click "Run now" on the weekly-longevity-review scheduled task once. <span class="muted">Pre-approves its access so Sundays run unattended.</span></li>
+      <li>When ready: connect Strava &amp; Alma (one click each) — then a wearable. <span class="muted">Each one deletes a logging chore forever.</span></li>
+    </ol>
+  </div>
+</section>
+
+<div class="foot">Built for Paul · July 2026 · inspired by @angus.sewell's "fire your $15k longevity coach" —<br>
+<b>your data · your hardware · your coach</b> · not medical advice: biomarker flags go to your GP, not just your AI</div>
+
+</body>
+</html>

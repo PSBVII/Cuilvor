@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuilvor — your coach</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root{--bg:#0e1113;--card:#171c1f;--line:#242b2f;--text:#e8eceb;--dim:#8fa09b;--accent:#5ad8a6;--warn:#e8a15a;--bad:#e86a5a;}
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,'Segoe UI',Roboto,sans-serif;padding:24px;max-width:960px;margin:0 auto}
+  h1{font-size:22px;margin-bottom:2px} h2{font-size:14px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin:28px 0 10px}
+  .sub{color:var(--dim);font-size:13px;margin-bottom:20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .kpi .v{font-size:26px;font-weight:600;margin-top:2px} .kpi .l{font-size:12px;color:var(--dim)} .kpi .t{font-size:11px;color:var(--dim)}
+  .warn{color:var(--warn)} .bad{color:var(--bad)}
+  input,button,textarea{font:inherit;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);padding:10px 12px}
+  button{background:var(--accent);color:#08130e;border:0;font-weight:600;cursor:pointer}
+  .row{display:flex;gap:8px;margin-top:8px}
+  .row input,.row textarea{flex:1}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left} th{color:var(--dim);font-weight:500}
+  #auth{max-width:380px;margin:80px auto;text-align:center}
+  .pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11px;border:1px solid var(--line)}
+  .review{white-space:pre-wrap;font-size:14px}
+  canvas{max-height:220px}
+  .muted{color:var(--dim);font-size:13px}
+</style>
+</head>
+<body>
+
+<noscript><p>Cuilvor needs JavaScript enabled.</p></noscript>
+
+<div id="auth" class="card" style="display:none">
+  <h1>Cuilvor</h1>
+  <p class="sub">Your data. Your hardware. No $15k coach.</p>
+  <button onclick="googleLogin()" style="width:100%;background:#fff;color:#1a1a1a">Continue with Google</button>
+  <div style="margin:12px 0;color:var(--dim);font-size:12px">— or —</div>
+  <input id="email" type="email" placeholder="you@email.com" style="width:100%">
+  <div class="row"><button onclick="sendLink()" style="width:100%">Send magic link</button></div>
+  <p id="authmsg" class="muted" style="margin-top:10px">Invite-only: your email must be on the waitlist.</p>
+</div>
+
+<div id="loading" style="text-align:center;padding:120px 0;color:var(--dim)">Loading Cuilvor…</div>
+
+<div id="app" style="display:none">
+  <h1>Cuilvor</h1>
+  <p class="sub">Week of <span id="weekof"></span> · <a href="#" onclick="signOut()" style="color:var(--dim)">sign out</a></p>
+
+  <div class="grid" id="kpis"></div>
+
+  <h2>Quick log</h2>
+  <div class="card">
+    <p class="muted">Say it like you'd text a coach — "ate 3 apples and a protein bar, took my meds", "slept 7h, felt 8/10". Claude parses it into meals & metrics on the next review or chat.</p>
+    <div class="row">
+      <textarea id="logtext" rows="2" placeholder="What happened?"></textarea>
+      <button onclick="quickLog()">Log</button>
+    </div>
+    <p id="logmsg" class="muted"></p>
+  </div>
+
+  <h2>Trends — last 14 days</h2>
+  <div class="grid" style="grid-template-columns:1fr 1fr">
+    <div class="card"><canvas id="sleepChart"></canvas></div>
+    <div class="card"><canvas id="hrvChart"></canvas></div>
+  </div>
+
+  <h2>Latest weekly review</h2>
+  <div class="card"><div id="review" class="review muted">No review yet — the first one runs Sunday 6pm.</div></div>
+
+  <h2>Recent meals</h2>
+  <div class="card" style="overflow-x:auto"><table id="mealsTable"><thead><tr><th>When</th><th>Food</th><th>Qty</th><th>kcal</th><th>Protein</th></tr></thead><tbody></tbody></table></div>
+
+  <h2>Biomarkers needing attention</h2>
+  <div class="card" style="overflow-x:auto"><table id="bioTable"><thead><tr><th>Date</th><th>Marker</th><th>Value</th><th>Range</th><th>Flag</th></tr></thead><tbody></tbody></table><p class="muted" id="biomsg"></p></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = (n,d=1) => n==null ? '—' : (+n).toFixed(d).replace(/\.0$/,'');
+let db=null, charts={};
+
+function fail(msg){ $('loading').textContent = msg; }
+
+try{
+  db = supabase.createClient('https://dktaxuguvfvqfhkjghjc.supabase.co','sb_publishable_NCosGOGEio07fybGZ9sdtg_xkyrd0-5');
+}catch(e){ fail('Could not reach the sign-in service — check your connection and refresh.'); }
+
+async function googleLogin(){
+  const {error} = await db.auth.signInWithOAuth({provider:'google', options:{redirectTo: location.origin + location.pathname}});
+  if(error) $('authmsg').textContent = error.message;
+}
+async function sendLink(){
+  const email = $('email').value.trim();
+  if(!email) return;
+  const {error} = await db.auth.signInWithOtp({email, options:{emailRedirectTo: location.origin + location.pathname}});
+  $('authmsg').textContent = error ? error.message : 'Check your email for the sign-in link.';
+}
+async function signOut(){ await db.auth.signOut(); location.reload(); }
+
+function show(view){
+  $('loading').style.display='none';
+  $('auth').style.display = view==='auth' ? 'block' : 'none';
+  $('app').style.display = view==='app' ? 'block' : 'none';
+}
+
+async function init(){
+  if(!db) return;
+  try{
+    const {data:{session}} = await db.auth.getSession();
+    if(!session){ show('auth'); return; }
+    show('app');
+    $('weekof').textContent = new Date().toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
+    loadAll();
+  }catch(e){ show('auth'); }
+}
+if(db) db.auth.onAuthStateChange((_e,s)=>{ if(s){ show('app'); loadAll(); }});
+
+async function quickLog(){
+  const t = $('logtext').value.trim();
+  if(!t) return;
+  const {error} = await db.rpc('log_health_entry',{p_raw:t,p_type:'note'});
+  $('logmsg').textContent = error ? error.message : 'Logged ✓ (Claude will parse it)';
+  if(!error) $('logtext').value='';
+  loadMeals();
+}
+
+async function loadAll(){ loadMetrics(); loadMeals(); loadReview(); loadBiomarkers(); }
+
+async function loadMetrics(){
+  const since = new Date(Date.now()-14*864e5).toISOString().slice(0,10);
+  const {data,error} = await db.from('v_health_daily_metrics').select('*').gte('day',since).order('day');
+  if(error){ console.error(error); return; }
+  const days = data||[];
+  const last = days[days.length-1]||{};
+  const avg = k => { const v=days.map(d=>d[k]).filter(x=>x!=null); return v.length? v.reduce((a,b)=>a+ +b,0)/v.length : null; };
+  const today = new Date().toISOString().slice(0,10);
+  const {data:mealsToday} = await db.from('v_health_meals').select('kcal,protein_g').gte('ts',today).neq('source','sample');
+  const kcal = (mealsToday||[]).reduce((a,m)=>a+(+m.kcal||0),0);
+  const prot = (mealsToday||[]).reduce((a,m)=>a+(+m.protein_g||0),0);
+  $('kpis').innerHTML = [
+    ['Sleep (14d avg)', fmt(avg('sleep_hours'))+'h', last.sleep_hours?`last: ${fmt(last.sleep_hours)}h`:''],
+    ['HRV (14d avg)', fmt(avg('hrv_ms'),0)+' ms', last.hrv_ms?`last: ${fmt(last.hrv_ms,0)}`:''],
+    ['Resting HR', fmt(avg('resting_hr'),0)+' bpm', ''],
+    ['Today', `${Math.round(kcal)} kcal`, `${Math.round(prot)}g protein`],
+  ].map(([l,v,t])=>`<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="t">${t}</div></div>`).join('');
+  drawChart('sleepChart','Sleep (h)', days.map(d=>d.day.slice(5)), days.map(d=>d.sleep_hours), '#5ad8a6');
+  drawChart('hrvChart','HRV (ms)', days.map(d=>d.day.slice(5)), days.map(d=>d.hrv_ms), '#5aa9e8');
+}
+function drawChart(id,label,labels,vals,color){
+  if(charts[id]) charts[id].destroy();
+  charts[id] = new Chart($(id),{type:'line',data:{labels,datasets:[{label,data:vals,borderColor:color,backgroundColor:color+'22',tension:.35,fill:true,spanGaps:true}]},
+    options:{plugins:{legend:{labels:{color:'#8fa09b'}}},scales:{x:{ticks:{color:'#8fa09b'},grid:{color:'#242b2f'}},y:{ticks:{color:'#8fa09b'},grid:{color:'#242b2f'}}}}});
+}
+async function loadMeals(){
+  const {data} = await db.from('v_health_meals').select('*').order('ts',{ascending:false}).limit(12);
+  $('mealsTable').querySelector('tbody').innerHTML = (data||[]).map(m=>
+    `<tr><td>${new Date(m.ts).toLocaleString(undefined,{weekday:'short',hour:'2-digit',minute:'2-digit'})}</td><td>${m.food}${m.source==='sample'?' <span class="pill">sample</span>':''}</td><td>${m.qty||''}</td><td>${fmt(m.kcal,0)}</td><td>${fmt(m.protein_g,0)}g</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Nothing logged yet — tell Claude what you ate.</td></tr>';
+}
+async function loadReview(){
+  const {data} = await db.from('v_health_weekly_reviews').select('*').order('week_start',{ascending:false}).limit(1);
+  if(data && data[0]) { $('review').classList.remove('muted'); $('review').textContent = data[0].full_report || data[0].recommendations; }
+}
+async function loadBiomarkers(){
+  const {data} = await db.from('v_health_biomarkers').select('*').neq('flag','normal').not('flag','is',null).order('test_date',{ascending:false}).limit(15);
+  const rows = data||[];
+  $('bioTable').querySelector('tbody').innerHTML = rows.map(b=>
+    `<tr><td>${b.test_date}</td><td>${b.name}</td><td>${b.value??b.value_text} ${b.unit||''}</td><td>${b.ref_low??''}–${b.ref_high??''}</td><td class="${b.flag==='critical'?'bad':'warn'}">${b.flag}</td></tr>`).join('');
+  $('biomsg').textContent = rows.length? '' : 'No flagged biomarkers — share a lab PDF or screenshot with Claude to add blood work.';
+}
+init();
+</script>
+</body>
+</html>

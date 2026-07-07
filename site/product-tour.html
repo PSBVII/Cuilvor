@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuilvor — Inside the app</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#050908;--panel:#0a1512;--panel2:#0e1c17;--ink:#f2f7f4;--dim:#7e948c;--line:#182a23;
+    --mint:#67f5c0;--teal:#3ecfcf;--blue:#7fb2ff;--gold:#f0d089;--coral:#f08989;
+    --grad:linear-gradient(120deg,#67f5c0,#3ecfcf 55%,#7fb2ff);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font:15px/1.6 Inter,-apple-system,sans-serif}
+  .serif{font-family:Fraunces,serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  a{color:var(--mint)}
+
+  header{padding:70px 0 30px;text-align:center;position:relative}
+  header::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0,#67f5c012,transparent 60%);pointer-events:none}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--mint)}
+  h1{font-family:Fraunces,serif;font-weight:500;font-size:clamp(32px,5vw,50px);margin:14px 0 8px;letter-spacing:-.01em}
+  header p{color:var(--dim);max-width:600px;margin:0 auto;font-size:16px}
+
+  /* sticky jump nav */
+  .tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:14px 0;position:sticky;top:0;z-index:40;background:#050908ee;backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .tab{background:#0e1c17;border:1px solid var(--line);color:var(--dim);padding:9px 18px;border-radius:99px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.25s;text-decoration:none}
+  .tab.on{color:#06110c;background:var(--grad);border-color:transparent}
+
+  .screen-wrap{padding:40px 0 90px}
+  .view{display:block;padding-top:26px;margin-bottom:110px;scroll-margin-top:86px}
+  .view:last-child{margin-bottom:30px}
+  .chap{text-align:center;margin-bottom:26px}
+  .chap .n{font-size:12px;letter-spacing:.24em;color:var(--mint);text-transform:uppercase}
+  .chap h2{font-family:Fraunces,serif;font-weight:500;font-size:30px;margin-top:6px}
+
+  /* app chrome */
+  .app{background:var(--panel);border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 40px 120px #000a}
+  .appbar{display:flex;align-items:center;gap:14px;padding:16px 22px;border-bottom:1px solid var(--line);background:#0b1713}
+  .dot{width:11px;height:11px;border-radius:50%;background:#213}
+  .logo{font-family:Fraunces,serif;font-weight:600;font-size:17px;margin-left:6px}
+  .logo i{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .appnav{margin-left:auto;display:flex;gap:6px}
+  .appnav span{font-size:12.5px;color:var(--dim);padding:6px 12px;border-radius:8px}
+  .appnav span.act{color:var(--ink);background:#152720}
+
+  .body{padding:26px}
+  .caption{text-align:center;color:var(--dim);font-size:14px;max-width:640px;margin:22px auto 0}
+  .caption b{color:var(--mint)}
+
+  /* dashboard */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:16px}
+  .kpi .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+  .kpi .v{font-family:Fraunces,serif;font-size:30px;margin-top:4px}
+  .kpi .d{font-size:12px;margin-top:2px} .up{color:var(--mint)}.dn{color:var(--coral)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+  @media(max-width:720px){.row2{grid-template-columns:1fr}}
+  .panel{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .panel h4{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:14px;font-weight:600}
+  svg{display:block;width:100%}
+
+  /* review */
+  .review{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:24px;max-width:760px;margin:0 auto}
+  .review .when{font-size:12px;color:var(--mint);letter-spacing:.14em;text-transform:uppercase}
+  .review h3{font-family:Fraunces,serif;font-size:24px;margin:6px 0 18px}
+  .block{border-left:2px solid #234;padding:2px 0 2px 18px;margin-bottom:20px}
+  .block.mint{border-color:var(--mint)} .block.gold{border-color:var(--gold)} .block.coral{border-color:var(--coral)}
+  .block .lbl{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+  .block p{font-size:15px}.block b{color:var(--gold)}.block .g{color:var(--mint)}.block .r{color:var(--coral)}
+  .change{display:flex;gap:12px;margin-top:10px}
+  .change .n{width:26px;height:26px;flex:none;border-radius:50%;background:var(--grad);color:#06110c;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px}
+
+  /* labs table */
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line)}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim)}
+  .flag{padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600}
+  .f-low{background:#f0d0891f;color:var(--gold);border:1px solid #f0d08940}
+  .f-high{background:#f089891f;color:var(--coral);border:1px solid #f0898940}
+  .f-ok{background:#67f5c018;color:var(--mint);border:1px solid #67f5c033}
+  .bar{height:5px;border-radius:3px;background:#1a2c25;position:relative;margin-top:5px}
+  .bar i{position:absolute;top:-2px;width:9px;height:9px;border-radius:50%;background:var(--ink);transform:translateX(-50%)}
+
+  /* log stream */
+  .stream{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+  .you{align-self:flex-end;background:var(--grad);color:#06110c;font-weight:550;padding:11px 15px;border-radius:16px 16px 5px 16px;max-width:80%}
+  .parse{align-self:flex-start;background:var(--panel2);border:1px solid var(--line);padding:12px 15px;border-radius:16px 16px 16px 5px;max-width:88%;font-size:13.5px}
+  .parse .t{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mint);margin-bottom:6px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{background:#12241d;border:1px solid var(--line);border-radius:8px;padding:3px 9px;font-size:12px;color:var(--dim)}
+  .chip b{color:var(--ink)}
+
+  .foot{text-align:center;padding:40px 0 70px;color:#5c6f68;font-size:13px}
+  .cta{display:inline-block;margin-top:14px;background:var(--grad);color:#06110c;font-weight:600;padding:12px 24px;border-radius:99px;text-decoration:none}
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <span class="eyebrow">Inside Cuilvor</span>
+  <h1 class="serif">What you actually get</h1>
+  <p>The inputs are just data plumbing. This is the part you live in — the outputs, the screens, the coaching. Scroll, or jump.</p>
+</div></header>
+<div class="tabs">
+  <a class="tab on" href="#dash">📊 Dashboard</a>
+  <a class="tab" href="#review">☀️ Weekly review</a>
+  <a class="tab" href="#labs">🩸 Bloodwork</a>
+  <a class="tab" href="#log">🎙️ Log stream</a>
+  <a class="tab" href="#compounds">🧪 Compounds</a>
+</div>
+
+<div class="screen-wrap"><div class="wrap">
+
+  <!-- DASHBOARD -->
+  <div class="view" id="dash">
+    <div class="chap"><div class="n">01 · Every morning</div><h2>The dashboard</h2></div>
+    <div class="app">
+      <div class="appbar"><span class="dot"></span><span class="dot" style="background:#2a3"></span><span class="dot"></span><span class="logo">cuil<i>vor</i></span>
+        <div class="appnav"><span class="act">Today</span><span>Trends</span><span>Labs</span><span>Coach</span></div></div>
+      <div class="body">
+        <div class="kpis">
+          <div class="kpi"><div class="l">Sleep · 14d</div><div class="v">7h38</div><div class="d up">▲ 24min vs last wk</div></div>
+          <div class="kpi"><div class="l">HRV · 14d</div><div class="v">58<span style="font-size:14px;color:var(--dim)">ms</span></div><div class="d up">▲ steady</div></div>
+          <div class="kpi"><div class="l">Resting HR</div><div class="v">54<span style="font-size:14px;color:var(--dim)">bpm</span></div><div class="d up">▼ 2 bpm</div></div>
+          <div class="kpi"><div class="l">Protein · today</div><div class="v">96<span style="font-size:14px;color:var(--dim)">g</span></div><div class="d dn">▼ 24g to target</div></div>
+        </div>
+        <div class="row2">
+          <div class="panel"><h4>Sleep — last 14 nights</h4>
+            <svg viewBox="0 0 400 130">
+              <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#67f5c0" stop-opacity=".5"/><stop offset="1" stop-color="#67f5c0" stop-opacity="0"/></linearGradient></defs>
+              <line x1="0" y1="40" x2="400" y2="40" stroke="#1a2c25" stroke-dasharray="3 4"/>
+              <text x="4" y="36" fill="#3d5347" font-size="9">9h</text>
+              <path d="M0,70 L30,58 L60,66 L90,50 L120,74 L150,62 L180,46 L210,90 L240,84 L270,54 L300,60 L330,48 L360,66 L400,52" fill="none" stroke="#67f5c0" stroke-width="2.5"/>
+              <path d="M0,70 L30,58 L60,66 L90,50 L120,74 L150,62 L180,46 L210,90 L240,84 L270,54 L300,60 L330,48 L360,66 L400,52 L400,130 L0,130 Z" fill="url(#sg)"/>
+            </svg></div>
+          <div class="panel"><h4>HRV — 14d trend</h4>
+            <svg viewBox="0 0 400 130">
+              <defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fb2ff" stop-opacity=".5"/><stop offset="1" stop-color="#7fb2ff" stop-opacity="0"/></linearGradient></defs>
+              <path d="M0,80 L30,74 L60,82 L90,70 L120,66 L150,72 L180,58 L210,64 L240,60 L270,54 L300,62 L330,50 L360,56 L400,48" fill="none" stroke="#7fb2ff" stroke-width="2.5"/>
+              <path d="M0,80 L30,74 L60,82 L90,70 L120,66 L150,72 L180,58 L210,64 L240,60 L270,54 L300,62 L330,50 L360,56 L400,48 L400,130 L0,130 Z" fill="url(#hg)"/>
+            </svg></div>
+        </div>
+        <div class="panel" style="margin-top:16px"><h4>Targets this week</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px">
+            <div><div style="font-size:13px;color:var(--dim)">Zone-2 minutes</div><div style="font-family:Fraunces,serif;font-size:22px">165 <span style="font-size:12px;color:var(--mint)">/ 150 ✓</span></div><div class="bar"><i style="left:100%;background:var(--mint)"></i></div></div>
+            <div><div style="font-size:13px;color:var(--dim)">Avg protein</div><div style="font-family:Fraunces,serif;font-size:22px">108 <span style="font-size:12px;color:var(--gold)">/ 120</span></div><div class="bar"><i style="left:82%;background:var(--gold)"></i></div></div>
+            <div><div style="font-size:13px;color:var(--dim)">Steps / day</div><div style="font-family:Fraunces,serif;font-size:22px">9,240 <span style="font-size:12px;color:var(--mint)">/ 8k ✓</span></div><div class="bar"><i style="left:100%;background:var(--mint)"></i></div></div>
+          </div></div>
+      </div>
+    </div>
+    <p class="caption">The <b>at-a-glance layer</b>. Every number is live from your own database — wearables fill it automatically once connected, or your logged entries fill it until then. Charts, targets, and today's macros in one screen.</p>
+  </div>
+
+  <!-- WEEKLY REVIEW -->
+  <div class="view" id="review">
+    <div class="chap"><div class="n">02 · Every Sunday</div><h2>The coaching output</h2></div>
+    <div class="review">
+      <div class="when">Weekly review · Sun 6 Jul, 18:00</div>
+      <h3 class="serif">Good week, undone at the weekend.</h3>
+      <div class="block mint"><div class="lbl">Where you are</div><p>Sleep averaged <b>7h42</b> (+24 min), HRV steady at <span class="g">58ms</span>, resting HR down to 54. Protein hit target 5 of 7 days. Training was your best week this month.</p></div>
+      <div class="block"><div class="lbl">Trending</div><p><span class="g">▲ Zone-2 volume 165 min</span> — first week over your 150-min target.<br><span class="r">▼ Sleep consistency</span> — bedtime drifted 90 min Fri &amp; Sat; Sunday HRV took the hit. Last week's "protein at breakfast" change: <span class="g">done 5/7 ✓</span>.</p></div>
+      <div class="block gold"><div class="lbl">Change these two things</div>
+        <div class="change"><div class="n">1</div><p><b>Bed by 23:00 Fri &amp; Sat.</b> Your weekday discipline is real — the weekend is quietly erasing it.</p></div>
+        <div class="change"><div class="n">2</div><p><b>+30g protein at breakfast.</b> Every low-protein day this week was morning-shaped.</p></div>
+      </div>
+      <div class="block coral"><div class="lbl">Worth a GP conversation</div><p>Ferritin has trended down across your last 3 panels (48 → 34 → 28 µg/L). Not urgent, but bring the export to your next appointment.</p></div>
+    </div>
+    <p class="caption">The <b>output that replaces the coach</b>. Written to you every Sunday and saved forever. Short by design — trends, whether last week's advice stuck, and never more than two changes. Ask <b>"how am I doing?"</b> any day to run it on demand.</p>
+  </div>
+
+  <!-- LABS -->
+  <div class="view" id="labs">
+    <div class="chap"><div class="n">03 · Whenever a test lands</div><h2>Bloodwork, decoded</h2></div>
+    <div class="app">
+      <div class="appbar"><span class="dot"></span><span class="dot" style="background:#2a3"></span><span class="dot"></span><span class="logo">cuil<i>vor</i></span>
+        <div class="appnav"><span>Today</span><span>Trends</span><span class="act">Labs</span><span>Coach</span></div></div>
+      <div class="body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <div><div style="font-family:Fraunces,serif;font-size:20px">NHS panel · 2 Jul 2026</div><div style="color:var(--dim);font-size:13px">62 biomarkers · 3 flagged · parsed from PDF in 4 seconds</div></div>
+          <div style="font-size:12px;color:var(--mint);border:1px solid #67f5c033;border-radius:8px;padding:6px 12px">＋ Drop another PDF</div>
+        </div>
+        <table>
+          <tr><th>Biomarker</th><th>Value</th><th>Reference</th><th>Position</th><th>Flag</th></tr>
+          <tr><td>Ferritin</td><td>28 µg/L</td><td>30–400</td><td><div class="bar"><i style="left:6%;background:var(--gold)"></i></div></td><td><span class="flag f-low">Low</span></td></tr>
+          <tr><td>Vitamin D (25-OH)</td><td>48 nmol/L</td><td>50–125</td><td><div class="bar"><i style="left:12%;background:var(--gold)"></i></div></td><td><span class="flag f-low">Low</span></td></tr>
+          <tr><td>hs-CRP</td><td>3.1 mg/L</td><td>&lt;3.0</td><td><div class="bar"><i style="left:88%;background:var(--coral)"></i></div></td><td><span class="flag f-high">High</span></td></tr>
+          <tr><td>ApoB</td><td>0.82 g/L</td><td>&lt;0.90</td><td><div class="bar"><i style="left:62%;background:var(--mint)"></i></div></td><td><span class="flag f-ok">Optimal</span></td></tr>
+          <tr><td>HbA1c</td><td>33 mmol/mol</td><td>&lt;42</td><td><div class="bar"><i style="left:40%;background:var(--mint)"></i></div></td><td><span class="flag f-ok">Optimal</span></td></tr>
+          <tr><td>Testosterone</td><td>21.4 nmol/L</td><td>8.6–29</td><td><div class="bar"><i style="left:63%;background:var(--mint)"></i></div></td><td><span class="flag f-ok">Normal</span></td></tr>
+        </table>
+        <div class="panel" style="margin-top:18px"><h4>Ferritin — across your panels</h4>
+          <svg viewBox="0 0 400 90">
+            <line x1="0" y1="30" x2="400" y2="30" stroke="#f0d089" stroke-dasharray="3 4" stroke-opacity=".4"/>
+            <text x="4" y="26" fill="#6b5a33" font-size="9">ref floor 30</text>
+            <polyline points="30,18 200,44 370,62" fill="none" stroke="#f0d089" stroke-width="2.5"/>
+            <circle cx="30" cy="18" r="4" fill="#f0d089"/><circle cx="200" cy="44" r="4" fill="#f0d089"/><circle cx="370" cy="62" r="4" fill="#f08989"/>
+            <text x="18" y="80" fill="#7e948c" font-size="10">Jan · 48</text><text x="188" y="80" fill="#7e948c" font-size="10">Apr · 34</text><text x="352" y="80" fill="#7e948c" font-size="10">Jul · 28</text>
+          </svg></div>
+      </div>
+    </div>
+    <p class="caption"><b>Bloodwork, on demand.</b> Drop a PDF from any lab at 9am and get this at 9:01 — every biomarker extracted, flagged against the report's own ranges, and <b>trended across every previous panel</b> so a slow decline like ferritin can't hide. Then a plain-English read of what to raise with your doctor.</p>
+  </div>
+
+  <!-- LOG STREAM -->
+  <div class="view" id="log">
+    <div class="chap"><div class="n">04 · All day, in seconds</div><h2>The log stream</h2></div>
+    <div class="stream">
+      <div class="you">Had a McDonald's cheeseburger and a caramel Grenade bar, took my omega-3 and vit D</div>
+      <div class="parse"><div class="t">Logged · parsed &amp; stored</div>
+        <div>Cross-checked branded items against published UK nutrition data.</div>
+        <div class="chips"><span class="chip"><b>Cheeseburger</b> 301 kcal · 15g P</span><span class="chip"><b>Grenade Caramel</b> 221 kcal · 22g P</span><span class="chip">Omega-3 <b>1g</b></span><span class="chip">Vit D <b>1000 IU</b></span></div>
+        <div style="margin-top:8px;color:var(--mint);font-size:12.5px">Day total: 1,730 kcal · 96g protein · 148g carbs · 71g fat</div></div>
+
+      <div class="you">Slept about 6½ hrs, feeling rough, skipped the gym</div>
+      <div class="parse"><div class="t">Logged · daily metrics</div>
+        <div class="chips"><span class="chip">Sleep <b>6.5h</b></span><span class="chip">Energy <b>3/10</b></span><span class="chip">Training <b>rest</b></span></div>
+        <div style="margin-top:8px;color:var(--dim);font-size:12.5px">That's 3 short nights this week — it'll surface in Sunday's review.</div></div>
+
+      <div class="you">Started 250mcg BPC-157, subq, morning</div>
+      <div class="parse"><div class="t">Logged · compound</div>
+        <div class="chips"><span class="chip"><b>BPC-157</b> peptide</span><span class="chip">250 mcg</span><span class="chip">subq</span><span class="chip">week 1</span></div>
+        <div style="margin-top:8px;color:var(--dim);font-size:12.5px">Tracked with dose &amp; route. I'll watch your inflammation markers (hs-CRP) and recovery against it. Not medical advice — this is your log, not a recommendation.</div></div>
+    </div>
+    <p class="caption"><b>The only interface you have to learn is a sentence.</b> Food, sleep, mood, training, supplements, peptides, medication — all parsed to structured rows. Branded foods resolve to near-exact macros; anything unlabelled is estimated and flagged as such.</p>
+  </div>
+
+  <!-- COMPOUNDS -->
+  <div class="view" id="compounds">
+    <div class="chap"><div class="n">05 · If you take anything</div><h2>The compound ledger</h2></div>
+    <div class="app">
+      <div class="appbar"><span class="dot"></span><span class="dot" style="background:#2a3"></span><span class="dot"></span><span class="logo">cuil<i>vor</i></span>
+        <div class="appnav"><span>Today</span><span>Trends</span><span>Labs</span><span class="act">Protocol</span></div></div>
+      <div class="body">
+        <div style="font-family:Fraunces,serif;font-size:20px;margin-bottom:4px">Active protocol</div>
+        <div style="color:var(--dim);font-size:13px;margin-bottom:18px">Everything you take — correlated with how your body responds. Logged, never judged.</div>
+        <table>
+          <tr><th>Compound</th><th>Type</th><th>Dose · route</th><th>Since</th><th>Correlated signal</th></tr>
+          <tr><td>Omega-3</td><td>Supplement</td><td>1g · oral</td><td>ongoing</td><td><span class="up">hs-CRP ▼</span></td></tr>
+          <tr><td>Vitamin D3</td><td>Supplement</td><td>1000 IU · oral</td><td>ongoing</td><td>25-OH ▲ tracking</td></tr>
+          <tr><td>BPC-157</td><td>Peptide</td><td>250 mcg · subq</td><td>wk 1 / 4</td><td>recovery — watching</td></tr>
+          <tr><td>Testosterone (TRT)</td><td>Hormone</td><td>100mg/wk · IM</td><td>wk 8</td><td><span class="up">Total-T in range</span></td></tr>
+          <tr><td>Creatine</td><td>Supplement</td><td>5g · oral</td><td>ongoing</td><td>—</td></tr>
+        </table>
+        <div class="panel" style="margin-top:18px;border-color:#f0898933"><h4 style="color:var(--coral)">Safety guardrail</h4>
+          <p style="font-size:13.5px;color:var(--dim)">Cuilvor <b style="color:var(--ink)">tracks and correlates</b> anything you log — including TRT, peptides or anabolics — and surfaces relevant biomarkers to monitor (e.g. haematocrit, lipids, liver markers on cycle). It will flag out-of-range values for your doctor. It <b style="color:var(--ink)">never prescribes, doses, or recommends</b> compounds. Your log, your clinician, your call.</p></div>
+      </div>
+    </div>
+    <p class="caption">Add peptides, hormones, medication or anabolics and <b>nothing breaks</b> — they become tracked variables with dose, route and cycle, correlated against your bloodwork over time. The system's job is <b>visibility and safety flags</b>, not medical advice.</p>
+  </div>
+
+</div></div>
+
+<div class="foot"><div class="wrap">
+  This is a design preview — real screens render from your live data.<br>
+  <a class="cta" href="index.html">← Back to the Cuilvor home</a>
+</div></div>
+
+<script>
+  // scroll-spy: highlight the jump pill for the section in view
+  try{
+    const tabs=[...document.querySelectorAll('.tab')];
+    const spy=new IntersectionObserver(es=>es.forEach(e=>{
+      if(e.isIntersecting){
+        tabs.forEach(t=>t.classList.toggle('on', t.getAttribute('href')==='#'+e.target.id));
+      }
+    }),{rootMargin:'-30% 0px -60% 0px'});
+    document.querySelectorAll('.view').forEach(v=>spy.observe(v));
+  }catch(e){}
+</script>
+</body>
+</html>

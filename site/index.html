@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuilvor — your biology, coached</title>
+<meta name="description" content="Cuilvor reads your sleep, food, training and bloodwork — and coaches you like a $15k longevity clinic. Built from your own data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#050908; --bg2:#081210; --ink:#f2f7f4; --dim:#7e948c; --line:#16241f;
+    --mint:#67f5c0; --teal:#3ecfcf; --gold:#f0d089;
+    --grad:linear-gradient(120deg,#67f5c0,#3ecfcf 55%,#7fb2ff);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font:16px/1.7 Inter,-apple-system,sans-serif;overflow-x:hidden}
+  ::selection{background:#67f5c055}
+  .serif{font-family:Fraunces,serif}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 28px}
+
+  /* grain + aurora */
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .04 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .aurora{position:fixed;inset:-20%;z-index:0;pointer-events:none;filter:blur(90px);opacity:.55}
+  .aurora div{position:absolute;border-radius:50%}
+  .aurora .a1{width:52vw;height:52vw;left:-10vw;top:-14vw;background:#0e4d3a;animation:drift1 26s ease-in-out infinite alternate}
+  .aurora .a2{width:44vw;height:44vw;right:-12vw;top:8vw;background:#123a4d;animation:drift2 31s ease-in-out infinite alternate}
+  .aurora .a3{width:38vw;height:38vw;left:28vw;top:46vw;background:#0d3328;animation:drift1 37s ease-in-out infinite alternate-reverse}
+  @keyframes drift1{to{transform:translate(9vw,7vw) scale(1.15)}}
+  @keyframes drift2{to{transform:translate(-8vw,10vw) scale(.9)}}
+
+  /* nav */
+  nav{position:fixed;top:0;left:0;right:0;z-index:50;backdrop-filter:blur(14px);background:#05090899;border-bottom:1px solid #ffffff0d}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .logo{font-family:Fraunces,serif;font-weight:600;font-size:21px;letter-spacing:.02em}
+  .logo i{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .navcta{font-size:13.5px;font-weight:600;color:#06110c;background:var(--grad);padding:9px 18px;border-radius:99px;text-decoration:none;transition:transform .25s}
+  .navcta:hover{transform:scale(1.05)}
+
+  /* hero */
+  header{position:relative;min-height:min(100svh,880px);display:flex;align-items:center;z-index:1}
+  #helix{position:absolute;inset:0;z-index:0}
+  .hero{position:relative;z-index:2;padding:120px 0 80px;max-width:720px}
+  .kick{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--mint);margin-bottom:26px}
+  .kick::before{content:'';width:26px;height:1px;background:var(--mint)}
+  h1{font-family:Fraunces,serif;font-weight:500;font-size:clamp(46px,7.2vw,86px);line-height:1.02;letter-spacing:-.015em}
+  h1 em{font-style:italic;background:linear-gradient(120deg,#67f5c0,#3ecfcf 40%,#7fb2ff 60%,#67f5c0);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 5.5s linear infinite}
+  @keyframes shimmer{to{background-position:220% center}}
+  .sub{margin:26px 0 38px;font-size:19px;color:var(--dim);max-width:540px}
+  .sub b{color:var(--ink);font-weight:600}
+
+  /* email capture */
+  .cap{display:flex;gap:10px;max-width:480px;position:relative}
+  .cap input{flex:1;background:#0c1714cc;border:1px solid #223b32;border-radius:14px;padding:16px 18px;font:15px Inter;color:var(--ink);outline:none;transition:border .3s}
+  .cap input:focus{border-color:var(--mint)}
+  .cap button{background:var(--grad);border:0;border-radius:14px;padding:16px 26px;font:600 15px Inter;color:#06110c;cursor:pointer;white-space:nowrap;transition:transform .25s,box-shadow .25s;animation:ctapulse 3.2s ease-in-out infinite}
+  .cap button:hover{transform:translateY(-2px);box-shadow:0 12px 40px #67f5c055;animation:none}
+  @keyframes ctapulse{0%,100%{box-shadow:0 0 0 0 #67f5c044}50%{box-shadow:0 0 0 9px #67f5c000}}
+  .capmsg{margin-top:12px;font-size:13.5px;color:var(--mint);min-height:20px}
+  .tiny{margin-top:6px;font-size:12px;color:#5c6f68}
+
+  .scrollhint{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:2;color:#5c6f68;font-size:11px;letter-spacing:.25em;text-transform:uppercase;animation:bob 2.4s ease-in-out infinite}
+  @keyframes bob{50%{transform:translate(-50%,8px)}}
+
+  /* sections */
+  section{position:relative;z-index:1;padding:84px 0}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--mint);margin-bottom:14px}
+  h2{font-family:Fraunces,serif;font-weight:500;font-size:clamp(32px,4.4vw,52px);line-height:1.08;letter-spacing:-.01em;max-width:640px}
+  .lead{color:var(--dim);font-size:17px;max-width:600px;margin-top:18px}
+
+  /* reveal on scroll — content is visible by default; JS opts IN to the hide/reveal */
+  html.js .rv{opacity:0;transform:translateY(36px);transition:opacity .9s cubic-bezier(.2,.65,.25,1),transform .9s cubic-bezier(.2,.65,.25,1)}
+  html.js .rv.on{opacity:1;transform:none}
+  .rv.d1{transition-delay:.12s}.rv.d2{transition-delay:.24s}.rv.d3{transition-delay:.36s}
+  @media (prefers-reduced-motion: reduce){html.js .rv{opacity:1;transform:none;transition:none}}
+
+  /* scroll progress */
+  #prog{position:fixed;top:0;left:0;height:3px;width:0;background:var(--grad);z-index:60;box-shadow:0 0 12px #67f5c088}
+
+  /* ticker */
+  .ticker{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:20px 0;overflow:hidden;background:#07100dcc}
+  .tk{display:flex;gap:56px;width:max-content;animation:tick 30s linear infinite;font-size:14px;font-weight:600;color:#63796f;letter-spacing:.06em;white-space:nowrap}
+  .tk span b{color:var(--mint)}
+  @keyframes tick{to{transform:translateX(-50%)}}
+
+  /* cards */
+  .grid3{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:54px}
+  .glass{background:linear-gradient(160deg,#ffffff08,#ffffff02);border:1px solid #ffffff12;border-radius:22px;padding:30px;backdrop-filter:blur(8px);transition:transform .4s,border .4s}
+  .glass:hover{transform:translateY(-6px);border-color:#67f5c044}
+  .glass .big{font-family:Fraunces,serif;font-size:40px;color:var(--mint)}
+  .glass h3{font-size:18px;margin:14px 0 8px}
+  .glass p{font-size:14.5px;color:var(--dim)}
+
+  /* phone mock */
+  .duo{display:grid;grid-template-columns:1.05fr .95fr;gap:60px;align-items:center;margin-top:30px}
+  @media(max-width:840px){.duo{grid-template-columns:1fr}}
+  .phone{width:320px;margin:0 auto;background:#0a1512;border:1px solid #223b32;border-radius:38px;padding:14px;box-shadow:0 40px 120px #000c,0 0 80px #67f5c012;transform:rotate(2.5deg);transition:transform .6s}
+  .phone:hover{transform:rotate(0) scale(1.02)}
+  .screen{background:#07100d;border-radius:26px;padding:20px 16px;font-size:12.5px}
+  .screen .hd{display:flex;justify-content:space-between;color:#5c6f68;font-size:10px;margin-bottom:14px;letter-spacing:.1em}
+  .msg{background:#0f1f19;border:1px solid #1c332a;border-radius:14px;padding:13px;margin-bottom:10px;line-height:1.55}
+  .msg .t{color:var(--mint);font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase}
+  .msg b{color:var(--gold)}
+  .msg .up{color:var(--mint)} .msg .dn{color:#f08989}
+
+  /* steps */
+  .steps{counter-reset:s;display:grid;gap:0;margin-top:50px}
+  .stp{counter-increment:s;display:grid;grid-template-columns:80px 1fr;gap:26px;padding:34px 0;border-top:1px solid var(--line)}
+  .stp:last-child{border-bottom:1px solid var(--line)}
+  .stp::before{content:'0' counter(s);font-family:Fraunces,serif;font-size:34px;color:#2c473d}
+  .stp h3{font-size:20px;margin-bottom:6px} .stp p{color:var(--dim);font-size:15px;max-width:560px}
+  .stp code{background:#0f1f19;border:1px solid #1c332a;padding:2px 9px;border-radius:8px;font-size:13px;color:var(--mint)}
+
+  /* final cta */
+  .final{text-align:center;padding:130px 0 120px}
+  .final h2{margin:0 auto 14px}
+  .final .cap{margin:38px auto 0}
+  .orb{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,#67f5c018,transparent 65%);pointer-events:none;animation:pulse 5s ease-in-out infinite}
+  @keyframes pulse{50%{transform:translate(-50%,-50%) scale(1.12);opacity:.7}}
+
+  footer{border-top:1px solid var(--line);padding:36px 0;font-size:13px;color:#5c6f68;position:relative;z-index:1}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  a{color:var(--mint)}
+</style>
+</head>
+<body>
+
+<div class="aurora"><div class="a1"></div><div class="a2"></div><div class="a3"></div></div>
+
+<div id="prog"></div>
+<nav><div class="wrap">
+  <div class="logo">cuil<i>vor</i></div>
+  <span style="margin-left:auto;display:flex;align-items:center;gap:20px">
+    <a href="product-tour.html" style="font-size:13.5px;color:var(--dim);text-decoration:none">See inside ↗</a>
+    <a class="navcta" href="#join">Get early access</a>
+  </span>
+</div></nav>
+
+<header>
+  <canvas id="helix"></canvas>
+  <div class="wrap">
+    <div class="hero">
+      <span class="kick">Your biology, coached</span>
+      <h1>More good <em>decades.</em></h1>
+      <p class="sub">Concierge longevity clinics charge <b>$15,000 a year</b> to read data you already own. Cuilvor plugs into your ring, your plate and your bloodwork — then coaches you every Sunday with the <b>one or two changes</b> that actually move the needle.</p>
+      <div class="cap" id="join">
+        <input id="em" type="email" placeholder="you@email.com" aria-label="email">
+        <button onclick="join()">Join the waitlist</button>
+      </div>
+      <div class="capmsg" id="capmsg"></div>
+      <div class="tiny">Early access first · App Store launch later · never spam, ever</div>
+    </div>
+  </div>
+  <div class="scrollhint">scroll</div>
+</header>
+
+<div class="ticker"><div class="tk" id="tk">
+  <span>OURA</span><span>WHOOP</span><span>APPLE&nbsp;HEALTH</span><span>STRAVA</span><span>GARMIN</span><span>WITHINGS</span><span>FUNCTION&nbsp;HEALTH</span><span>ANY&nbsp;LAB&nbsp;PDF</span><span>ALMA</span><span>POLAR</span><span><b>+ your own words</b></span>
+</div></div>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow rv">The problem</p>
+    <h2 class="rv">Your body publishes data every day.<br>Nobody's reading it.</h2>
+    <p class="lead rv d1">Sleep scores pile up in one app. Workouts in another. Blood panels as PDFs in your inbox. The insight isn't missing — the <em style="color:var(--ink)">reader</em> is. That's the entire job a longevity coach does. It's now automatable.</p>
+    <div class="grid3">
+      <div class="glass rv"><div class="big" data-count="15000" data-pre="$">0</div><h3>per year, gone</h3><p>What concierge clinics charge to look at your numbers bi-weekly and tell you to sleep more.</p></div>
+      <div class="glass rv d1"><div class="big" data-count="100" data-suf="+">0</div><h3>biomarkers, read</h3><p>Every panel you've ever taken — extracted, flagged and trended, from any lab, in any format.</p></div>
+      <div class="glass rv d2"><div class="big" data-count="2">0</div><h3>changes per week</h3><p>Never ten fixes. The two that matter, scheduled, then checked next week. Accountability is the product.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:40px">
+  <div class="wrap">
+    <p class="eyebrow rv">The output</p>
+    <h2 class="rv">Sunday, 6pm.<br>Your week, decoded.</h2>
+    <div class="duo">
+      <div>
+        <p class="lead rv d1">No dashboards to interpret, no charts homework. Cuilvor writes to you like a coach who's been watching all week — because it has. Ask anything, anytime: drop bloodwork at 9am, get analysis at 9:01.</p>
+        <div class="steps rv d2" style="margin-top:34px">
+          <div class="stp"><div><h3>Log by talking</h3><p>"Cheeseburger and a Grenade bar, took my meds, slept 7h." Parsed to macros, micros and metrics in seconds. <code>voice or text</code></p></div></div>
+          <div class="stp"><div><h3>Drop any lab PDF</h3><p>NHS, Function, Superpower, your GP — every biomarker extracted and compared to your last panel. <code>instant feedback</code></p></div></div>
+          <div class="stp"><div><h3>Get coached weekly</h3><p>Trends vs targets, adherence vs last week, and exactly what to change. <code>sundays · or on demand</code></p></div></div>
+        </div>
+      </div>
+      <div class="rv d2">
+        <div class="phone"><div class="screen">
+          <div class="hd"><span>CUILVOR</span><span>SUN 18:00</span></div>
+          <div class="msg"><div class="t">Where you are</div>Solid week. Sleep averaged <b>7h42</b> (+24min), HRV steady at <b>58ms</b>, protein hit target 5 of 7 days.</div>
+          <div class="msg"><div class="t">Trending</div><span class="up">▲ Zone-2: 165 min</span> — first week over target.<br><span class="dn">▼ Sleep consistency</span> — bedtime drifted 90min on Fri/Sat, and your Sunday HRV shows it.</div>
+          <div class="msg"><div class="t">This week, change two things</div>1 · Bed by <b>23:00 Fri &amp; Sat</b> — your weekday discipline is being undone at weekends.<br>2 · Add <b>30g protein at breakfast</b> — your low days are all morning-shaped.</div>
+          <div class="msg"><div class="t">Flag</div>Ferritin still trending down across 3 panels. Worth a GP conversation — bring the export.</div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow rv">The moat</p>
+    <h2 class="rv">Connect anything.<br>Own everything.</h2>
+    <p class="lead rv d1">Wearables, food logs, blood panels, even peptide or medication protocols — logged, correlated against your labs, never judged. Your data lives in your own database, exportable any second. If it has an API, an export, or can be described in a sentence, Cuilvor reads it.</p>
+    <div class="grid3">
+      <div class="glass rv"><h3>🔌 Every source</h3><p>Oura, Whoop, Apple Watch, Garmin, Strava, Withings, Polar, Function Health, Alma — plus any lab PDF and plain English for the rest.</p></div>
+      <div class="glass rv d1"><h3>🧪 Every compound</h3><p>Meds, supplements, peptides, hormones — tracked with dose, route and cycle, correlated with your bloodwork over time. Flagged to your doctor, not moralised.</p></div>
+      <div class="glass rv d2"><h3>🔒 Yours, forever</h3><p>Not our silo — your database. Full export anytime. The coach works for you, not for an ads team.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="orb"></div>
+  <div class="wrap">
+    <p class="eyebrow rv">Early access</p>
+    <h2 class="rv">Fire the $15k coach.<br><em class="serif" style="background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">Keep the coaching.</em></h2>
+    <p class="lead rv d1" style="margin:18px auto 0">First cohort gets in before the App Store does.</p>
+    <div class="cap rv d2">
+      <input id="em2" type="email" placeholder="you@email.com" aria-label="email">
+      <button onclick="join(2)">Get early access</button>
+    </div>
+    <div class="capmsg" id="capmsg2"></div>
+  </div>
+</section>
+
+<footer><div class="wrap">
+  <span><b class="logo" style="font-size:15px">cuil<i>vor</i></b> · your biology, coached</span>
+  <span>Not medical advice — flags go to your GP. · © 2026</span>
+</div></footer>
+
+<script>
+/* content is visible without JS; only hide-for-reveal once JS is confirmed alive */
+document.documentElement.classList.add('js');
+
+/* ---------- email capture (Supabase) ---------- */
+let sb=null;
+try{ sb = supabase.createClient('https://dktaxuguvfvqfhkjghjc.supabase.co','sb_publishable_NCosGOGEio07fybGZ9sdtg_xkyrd0-5'); }catch(e){}
+async function join(n){
+  const inp = document.getElementById(n===2?'em2':'em');
+  const msg = document.getElementById(n===2?'capmsg2':'capmsg');
+  const email = inp.value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ msg.textContent='That email doesn’t look right.'; return; }
+  if(!sb){ msg.textContent='Connection hiccup — refresh and try again.'; return; }
+  const {error} = await sb.from('cuilvor_waitlist').insert({email, source:'landing'});
+  if(error && error.code==='23505'){ msg.textContent='You’re already on the list — good instincts.'; }
+  else if(error){ msg.textContent='Hmm, try again in a moment.'; }
+  else { msg.textContent='You’re in. Watch your inbox. 🧬'; inp.value=''; }
+}
+
+/* ---------- scroll reveals (fail-open: if IO unsupported, show everything) ---------- */
+try{
+  const io = new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');io.unobserve(e.target)}}),{threshold:.18,rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+}catch(e){ document.querySelectorAll('.rv').forEach(el=>el.classList.add('on')); }
+
+/* ---------- scroll progress bar ---------- */
+addEventListener('scroll',()=>{
+  const h=document.documentElement, p=h.scrollTop/(h.scrollHeight-h.clientHeight);
+  document.getElementById('prog').style.width=(p*100)+'%';
+},{passive:true});
+
+/* ---------- counters ---------- */
+try{
+const co = new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting) return; co.unobserve(e.target);
+  const el=e.target, end=+el.dataset.count, pre=el.dataset.pre||'', suf=el.dataset.suf||'', t0=performance.now();
+  (function tick(t){ const p=Math.min((t-t0)/1400,1), v=Math.round(end*(1-Math.pow(1-p,3)));
+    el.textContent=pre+v.toLocaleString()+suf; if(p<1) requestAnimationFrame(tick); })(t0);
+}),{threshold:.6});
+document.querySelectorAll('[data-count]').forEach(el=>co.observe(el));
+}catch(e){ document.querySelectorAll('[data-count]').forEach(el=>{el.textContent=(el.dataset.pre||'')+(+el.dataset.count).toLocaleString()+(el.dataset.suf||'')}); }
+
+/* ---------- ticker duplicate ---------- */
+document.getElementById('tk').innerHTML += document.getElementById('tk').innerHTML;
+
+/* ---------- 3D DNA helix (three.js) ---------- */
+(function(){ try{
+  if(typeof THREE==='undefined') return;
+  const canvas = document.getElementById('helix');
+  const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+  const scene = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(55, 1, .1, 100);
+  cam.position.set(0,0,13);
+
+  const group = new THREE.Group(); scene.add(group);
+  const N=170, LEN=22, R=2.1, TURNS=4.2;
+  const mk = c => new THREE.PointsMaterial({color:c,size:.17,transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false});
+  const strand = phase => {
+    const g=new THREE.BufferGeometry(), pos=new Float32Array(N*3);
+    for(let i=0;i<N;i++){ const t=i/N, a=t*Math.PI*2*TURNS+phase;
+      pos[i*3]=Math.cos(a)*R; pos[i*3+1]=(t-.5)*LEN; pos[i*3+2]=Math.sin(a)*R; }
+    g.setAttribute('position',new THREE.BufferAttribute(pos,3)); return g;
+  };
+  group.add(new THREE.Points(strand(0),mk(0x67f5c0)));
+  group.add(new THREE.Points(strand(Math.PI),mk(0x3ecfcf)));
+  // rungs
+  const rungMat=new THREE.LineBasicMaterial({color:0x1d4a3c,transparent:true,opacity:.8});
+  for(let i=0;i<N;i+=6){ const t=i/N,a=t*Math.PI*2*TURNS;
+    const g=new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(Math.cos(a)*R,(t-.5)*LEN,Math.sin(a)*R),
+      new THREE.Vector3(Math.cos(a+Math.PI)*R,(t-.5)*LEN,Math.sin(a+Math.PI)*R)]);
+    group.add(new THREE.Line(g,rungMat)); }
+  // ambient particle field
+  const P=520, pg=new THREE.BufferGeometry(), pp=new Float32Array(P*3);
+  for(let i=0;i<P*3;i++) pp[i]=(Math.random()-.5)*30;
+  pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+  const field=new THREE.Points(pg,new THREE.PointsMaterial({color:0x2a5d4b,size:.09,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false}));
+  scene.add(field);
+
+  group.rotation.z=.35; group.position.x=3.4;
+  let mx=0,my=0,scroll=0;
+  addEventListener('mousemove',e=>{mx=(e.clientX/innerWidth-.5);my=(e.clientY/innerHeight-.5)});
+  addEventListener('scroll',()=>{scroll=window.scrollY});
+  function size(){ const w=canvas.clientWidth||innerWidth, h=canvas.clientHeight||innerHeight;
+    renderer.setSize(w,h,false); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); cam.aspect=w/h; cam.updateProjectionMatrix(); }
+  addEventListener('resize',size); size();
+  if(innerWidth<840){ group.position.x=0; group.rotation.z=.5; canvas.style.opacity=.35; }
+  (function loop(t){
+    group.rotation.y = t*.00028 + scroll*.0012;
+    group.rotation.x = my*.25; group.position.y = -mx*.6;
+    field.rotation.y = -t*.00006;
+    renderer.render(scene,cam); requestAnimationFrame(loop);
+  })(0);
+}catch(e){} })();
+</script>
+</body>
+</html>
