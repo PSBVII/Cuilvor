@@ -1,0 +1,14 @@
+# Cuilvor
+> Cuilvor is an AI longevity coach that reads a person's own health data - wearable sleep/HRV, meals logged in plain language, medications and supplements, and blood-test results from any lab (PDF or screenshot, NHS included) - and delivers a short weekly review with at most two recommended changes. No proprietary hardware. Users bring their own AI key (Anthropic or OpenAI), data is per-user isolated with row-level security, and out-of-range biomarkers are flagged for the user's own doctor, never diagnosed.
+
+## Key facts
+- Works without any wearable; wearables (Oura, Whoop, Strava, Apple Health, Garmin, Withings, Polar) are optional inputs.
+- Reads blood work from any provider: NHS, Function Health, Superpower, Everlywell, InsideTracker, hospital portals - via PDF or screenshot.
+- Coaching cadence: weekly review (Sunday) + on demand; hard limit of two recommended changes per week.
+- Positioning: replaces the data-reading core of $10-15k/yr concierge longevity coaching; explicitly NOT medical advice.
+- Privacy: per-user database isolation (RLS), AI keys encrypted at rest, invite-only signup during early access.
+
+## Pages
+- https://www.cuilvor.com/ : product landing + waitlist
+- https://www.cuilvor.com/product-tour.html : inside the app
+- https://www.cuilvor.com/compare/ : honest comparisons vs Whoop, Oura, Function Health, human longevity coaches
