@@ -2,173 +2,368 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cuilvor — your coach</title>
+<meta name="theme-color" content="#050908">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
-  :root{--bg:#0e1113;--card:#171c1f;--line:#242b2f;--text:#e8eceb;--dim:#8fa09b;--accent:#5ad8a6;--warn:#e8a15a;--bad:#e86a5a;}
-  *{box-sizing:border-box;margin:0}
-  body{background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,'Segoe UI',Roboto,sans-serif;padding:24px;max-width:960px;margin:0 auto}
-  h1{font-size:22px;margin-bottom:2px} h2{font-size:14px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin:28px 0 10px}
-  .sub{color:var(--dim);font-size:13px;margin-bottom:20px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
-  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-  .kpi .v{font-size:26px;font-weight:600;margin-top:2px} .kpi .l{font-size:12px;color:var(--dim)} .kpi .t{font-size:11px;color:var(--dim)}
-  .warn{color:var(--warn)} .bad{color:var(--bad)}
-  input,button,textarea{font:inherit;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);padding:10px 12px}
-  button{background:var(--accent);color:#08130e;border:0;font-weight:600;cursor:pointer}
-  .row{display:flex;gap:8px;margin-top:8px}
-  .row input,.row textarea{flex:1}
+  :root{--bg:#050908;--card:#0d1613;--card2:#111d18;--line:#1b2b24;--ink:#eef4f1;--dim:#7e948c;
+    --mint:#67f5c0;--teal:#3ecfcf;--blue:#7fb2ff;--gold:#f0d089;--coral:#f08989;
+    --grad:linear-gradient(120deg,#67f5c0,#3ecfcf 55%,#7fb2ff)}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{background:var(--bg);color:var(--ink);font:15px/1.55 Inter,-apple-system,sans-serif;min-height:100svh}
+  .serif{font-family:Fraunces,serif}
+  body::before{content:'';position:fixed;inset:-30% -30% auto;height:60%;z-index:0;pointer-events:none;
+    background:radial-gradient(ellipse at 30% 20%,#0e4d3a33,transparent 60%),radial-gradient(ellipse at 75% 10%,#123a4d2e,transparent 60%);filter:blur(60px)}
+  .shell{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:20px 18px calc(84px + env(safe-area-inset-bottom))}
+  @media(min-width:760px){.shell{padding-bottom:40px}}
+
+  /* header */
+  .top{display:flex;align-items:baseline;justify-content:space-between;margin:6px 0 20px}
+  .logo{font-family:Fraunces,serif;font-weight:600;font-size:24px}
+  .logo i{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .date{font-size:12px;color:var(--dim);letter-spacing:.06em}
+
+  /* nav */
+  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:space-around;
+    background:#070d0bf2;backdrop-filter:blur(16px);border-top:1px solid var(--line);
+    padding:10px 8px calc(10px + env(safe-area-inset-bottom))}
+  .tab{flex:1;max-width:120px;text-align:center;color:var(--dim);font-size:11px;font-weight:600;letter-spacing:.04em;cursor:pointer;border:0;background:none;font-family:inherit}
+  .tab .ic{display:block;font-size:19px;margin-bottom:3px;filter:grayscale(1) opacity(.55);transition:.25s}
+  .tab.on{color:var(--mint)} .tab.on .ic{filter:none;transform:translateY(-1px)}
+  @media(min-width:760px){
+    .tabs{position:static;background:none;border:0;backdrop-filter:none;justify-content:flex-start;gap:8px;padding:0;margin-bottom:24px}
+    .tab{display:flex;align-items:center;gap:7px;max-width:none;flex:none;padding:9px 16px;border-radius:99px;border:1px solid var(--line);background:var(--card);font-size:13px}
+    .tab .ic{display:inline;font-size:15px;margin:0}
+    .tab.on{background:var(--grad);color:#06110c;border-color:transparent}
+    .tab.on .ic{transform:none}
+  }
+
+  .view{display:none}.view.on{display:block;animation:in .35s cubic-bezier(.2,.7,.3,1)}
+  @keyframes in{from{opacity:0;transform:translateY(10px)}}
+
+  h2{font-size:12px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.14em;margin:26px 0 12px}
+  .card{background:linear-gradient(170deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:18px;padding:18px}
+
+  /* KPIs */
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(min-width:560px){.kpis{grid-template-columns:repeat(4,1fr)}}
+  .kpi{background:linear-gradient(170deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:16px;padding:14px}
+  .kpi .l{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
+  .kpi .v{font-family:Fraunces,serif;font-size:27px;margin-top:3px}
+  .kpi .v small{font-size:13px;color:var(--dim);font-family:Inter}
+  .kpi .t{font-size:11px;margin-top:2px;color:var(--dim)}
+  .up{color:var(--mint)}.dn{color:var(--coral)}
+
+  /* quick log */
+  textarea,input,select{width:100%;font:inherit;background:#0a120f;border:1px solid var(--line);border-radius:12px;color:var(--ink);padding:13px 14px;outline:none;transition:border .25s}
+  textarea:focus,input:focus{border-color:var(--mint)}
+  textarea{resize:none;min-height:74px}
+  .hint{display:flex;align-items:center;gap:7px;font-size:12px;color:#5c6f68;margin-top:8px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--grad);color:#06110c;border:0;border-radius:12px;padding:13px 20px;font:600 14.5px Inter;cursor:pointer;transition:transform .2s,opacity .2s}
+  .btn:active{transform:scale(.97)} .btn:disabled{opacity:.45}
+  .btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+  .logrow{display:flex;gap:10px;margin-top:10px}
+  .logrow .btn{flex:none}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .chip{background:#12241d;border:1px solid var(--line);border-radius:9px;padding:4px 10px;font-size:12.5px;color:var(--dim);animation:in .3s}
+  .chip b{color:var(--ink)}
+  .msg{font-size:13px;margin-top:10px;color:var(--dim);min-height:18px}
+  .msg.err{color:var(--coral)}
+
+  /* charts */
+  .charts{display:grid;gap:12px}
+  @media(min-width:560px){.charts{grid-template-columns:1fr 1fr}}
+  .chartwrap{position:relative;height:190px;padding:14px 10px 8px;background:linear-gradient(170deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .chartwrap .cl{position:absolute;top:12px;left:14px;font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;z-index:2}
+  .chartwrap canvas{position:absolute;inset:34px 8px 8px!important;width:calc(100% - 16px)!important;height:calc(100% - 42px)!important}
+
+  /* review */
+  .review h3{font-family:Fraunces,serif;font-size:22px;font-weight:500;margin-bottom:4px}
+  .review .when{font-size:11px;color:var(--mint);letter-spacing:.14em;text-transform:uppercase}
+  .rbody{white-space:pre-wrap;font-size:14.5px;line-height:1.65;margin-top:14px}
+  .empty{color:var(--dim);font-size:14px;text-align:center;padding:26px 8px}
+  .empty .big{font-size:30px;display:block;margin-bottom:8px}
+
+  /* tables */
   table{width:100%;border-collapse:collapse;font-size:13px}
-  td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left} th{color:var(--dim);font-weight:500}
-  #auth{max-width:380px;margin:80px auto;text-align:center}
-  .pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11px;border:1px solid var(--line)}
-  .review{white-space:pre-wrap;font-size:14px}
-  canvas{max-height:220px}
-  .muted{color:var(--dim);font-size:13px}
+  td,th{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);font-weight:600}
+  tr:last-child td{border-bottom:0}
+  .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
+  .p-low{background:#f0d0891a;color:var(--gold)}.p-high{background:#f089891a;color:var(--coral)}.p-ok{background:#67f5c014;color:var(--mint)}.p-dim{background:#ffffff0a;color:var(--dim)}
+
+  /* settings */
+  .set label{display:block;font-size:12px;color:var(--dim);margin:16px 0 6px;text-transform:uppercase;letter-spacing:.08em}
+  .keystat{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:10px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--coral)} .dot.ok{background:var(--mint);box-shadow:0 0 10px #67f5c077}
+  .note{font-size:12.5px;color:#5c6f68;line-height:1.6;margin-top:10px}
+  .note a{color:var(--mint)}
+
+  /* auth */
+  #auth{max-width:400px;margin:12svh auto 0;text-align:center}
+  #auth .logo{font-size:34px;margin-bottom:6px}
+  #auth .sub{color:var(--dim);font-size:14px;margin-bottom:26px}
+  .gbtn{width:100%;background:#fff;color:#141414;border:0;border-radius:12px;padding:13px;font:600 14.5px Inter;cursor:pointer}
+  .or{margin:16px 0;color:#465a52;font-size:12px;display:flex;align-items:center;gap:12px}
+  .or::before,.or::after{content:'';flex:1;height:1px;background:var(--line)}
+  #loading{text-align:center;padding:38svh 0;color:var(--dim);font-size:14px;letter-spacing:.05em}
 </style>
 </head>
 <body>
+<noscript><p style="padding:40px;text-align:center">Cuilvor needs JavaScript.</p></noscript>
+<div id="loading">◐ loading cuilvor…</div>
 
-<noscript><p>Cuilvor needs JavaScript enabled.</p></noscript>
-
-<div id="auth" class="card" style="display:none">
-  <h1>Cuilvor</h1>
+<div id="auth" class="shell" style="display:none">
+  <div class="logo">cuil<i>vor</i></div>
   <p class="sub">Your data. Your hardware. No $15k coach.</p>
-  <button onclick="googleLogin()" style="width:100%;background:#fff;color:#1a1a1a">Continue with Google</button>
-  <div style="margin:12px 0;color:var(--dim);font-size:12px">— or —</div>
-  <input id="email" type="email" placeholder="you@email.com" style="width:100%">
-  <div class="row"><button onclick="sendLink()" style="width:100%">Send magic link</button></div>
-  <p id="authmsg" class="muted" style="margin-top:10px">Invite-only: your email must be on the waitlist.</p>
+  <div class="card" style="padding:22px">
+    <button class="gbtn" onclick="googleLogin()">Continue with Google</button>
+    <div class="or">or</div>
+    <input id="email" type="email" placeholder="you@email.com" autocomplete="email">
+    <button class="btn" style="width:100%;margin-top:10px" onclick="sendLink()">Send magic link</button>
+    <p class="msg" id="authmsg">Invite-only — your email must be on the waitlist.</p>
+  </div>
 </div>
 
-<div id="loading" style="text-align:center;padding:120px 0;color:var(--dim)">Loading Cuilvor…</div>
+<div id="app" class="shell" style="display:none">
+  <div class="top">
+    <div class="logo">cuil<i>vor</i></div>
+    <div class="date" id="today"></div>
+  </div>
 
-<div id="app" style="display:none">
-  <h1>Cuilvor</h1>
-  <p class="sub">Week of <span id="weekof"></span> · <a href="#" onclick="signOut()" style="color:var(--dim)">sign out</a></p>
+  <div class="tabs">
+    <button class="tab on" data-v="v-today"><span class="ic">☀️</span>Today</button>
+    <button class="tab" data-v="v-coach"><span class="ic">🧭</span>Coach</button>
+    <button class="tab" data-v="v-labs"><span class="ic">🩸</span>Labs</button>
+    <button class="tab" data-v="v-set"><span class="ic">⚙️</span>Settings</button>
+  </div>
 
-  <div class="grid" id="kpis"></div>
+  <!-- TODAY -->
+  <div class="view on" id="v-today">
+    <div class="kpis" id="kpis"></div>
 
-  <h2>Quick log</h2>
-  <div class="card">
-    <p class="muted">Say it like you'd text a coach — "ate 3 apples and a protein bar, took my meds", "slept 7h, felt 8/10". Claude parses it into meals & metrics on the next review or chat.</p>
-    <div class="row">
-      <textarea id="logtext" rows="2" placeholder="What happened?"></textarea>
-      <button onclick="quickLog()">Log</button>
+    <h2>Quick log</h2>
+    <div class="card">
+      <textarea id="logtext" placeholder="ate 3 eggs and toast, took creatine, slept 7h, feeling 8/10…" enterkeyhint="send"></textarea>
+      <div class="hint">🎤 Tip: tap the mic on your keyboard to log by voice — it types for you.</div>
+      <div class="logrow">
+        <button class="btn" id="logbtn" onclick="quickLog()">Log it</button>
+      </div>
+      <div class="chips" id="logchips"></div>
+      <div class="msg" id="logmsg"></div>
     </div>
-    <p id="logmsg" class="muted"></p>
+
+    <h2>Last 14 days</h2>
+    <div class="charts">
+      <div class="chartwrap"><span class="cl">Sleep · hours</span><canvas id="c-sleep"></canvas></div>
+      <div class="chartwrap"><span class="cl">HRV · ms</span><canvas id="c-hrv"></canvas></div>
+    </div>
+
+    <h2>Recent meals</h2>
+    <div class="card" style="overflow-x:auto">
+      <table id="mealsTable"><thead><tr><th>When</th><th>Food</th><th>kcal</th><th>Protein</th></tr></thead><tbody></tbody></table>
+      <div class="empty" id="mealsEmpty" style="display:none"><span class="big">🍳</span>Nothing logged yet — say what you ate above.</div>
+    </div>
   </div>
 
-  <h2>Trends — last 14 days</h2>
-  <div class="grid" style="grid-template-columns:1fr 1fr">
-    <div class="card"><canvas id="sleepChart"></canvas></div>
-    <div class="card"><canvas id="hrvChart"></canvas></div>
+  <!-- COACH -->
+  <div class="view" id="v-coach">
+    <div class="card review">
+      <div class="when" id="rwhen">Weekly review</div>
+      <h3 id="rtitle">No review yet</h3>
+      <div class="rbody" id="rbody">Your coach reads everything you log — sleep, food, training, bloods — and writes you a short review: where you are, what's trending, and the one or two changes that matter. Runs every Sunday, or on demand below.</div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px">
+      <button class="btn" id="runbtn" onclick="runReview()">Run my review now</button>
+    </div>
+    <div class="msg" id="rmsg"></div>
   </div>
 
-  <h2>Latest weekly review</h2>
-  <div class="card"><div id="review" class="review muted">No review yet — the first one runs Sunday 6pm.</div></div>
+  <!-- LABS -->
+  <div class="view" id="v-labs">
+    <div class="card" style="overflow-x:auto">
+      <table id="bioTable"><thead><tr><th>Date</th><th>Marker</th><th>Value</th><th>Range</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="empty" id="bioEmpty" style="display:none"><span class="big">🩸</span>No blood work yet.<br>Share a lab PDF <em>or a screenshot</em> (NHS app screenshots work) with Claude and it lands here.</div>
+    </div>
+  </div>
 
-  <h2>Recent meals</h2>
-  <div class="card" style="overflow-x:auto"><table id="mealsTable"><thead><tr><th>When</th><th>Food</th><th>Qty</th><th>kcal</th><th>Protein</th></tr></thead><tbody></tbody></table></div>
-
-  <h2>Biomarkers needing attention</h2>
-  <div class="card" style="overflow-x:auto"><table id="bioTable"><thead><tr><th>Date</th><th>Marker</th><th>Value</th><th>Range</th><th>Flag</th></tr></thead><tbody></tbody></table><p class="muted" id="biomsg"></p></div>
+  <!-- SETTINGS -->
+  <div class="view" id="v-set">
+    <div class="card set">
+      <h3 class="serif" style="font-size:19px">Your AI key</h3>
+      <p class="note">Cuilvor's parsing and coaching run on <b>your own</b> AI account, so your usage is yours alone. Get a key from <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> (Claude) or <a href="https://platform.openai.com" target="_blank" rel="noopener">platform.openai.com</a>. It's stored server-side, never shown again, and only ever used for your requests.</p>
+      <div class="keystat"><span class="dot" id="keydot"></span><span id="keystat">Checking…</span></div>
+      <label>Provider</label>
+      <select id="provider"><option value="anthropic">Anthropic (Claude)</option><option value="openai">OpenAI</option></select>
+      <label>API key</label>
+      <input id="apikey" type="password" placeholder="sk-…" autocomplete="off">
+      <button class="btn" style="margin-top:14px" onclick="saveKey()">Save key</button>
+      <div class="msg" id="keymsg"></div>
+    </div>
+    <div class="card set" style="margin-top:14px">
+      <h3 class="serif" style="font-size:19px">Account</h3>
+      <p class="note" id="whoami"></p>
+      <button class="btn ghost" style="margin-top:10px" onclick="signOut()">Sign out</button>
+    </div>
+    <p class="note" style="text-align:center;margin-top:18px">Cuilvor is a tracking & coaching tool, not medical advice.<br>Out-of-range flags belong in front of your GP.</p>
+  </div>
 </div>
 
 <script>
-const $ = id => document.getElementById(id);
-const fmt = (n,d=1) => n==null ? '—' : (+n).toFixed(d).replace(/\.0$/,'');
-let db=null, charts={};
+document.getElementById('loading').style.display='block';
+const $=id=>document.getElementById(id);
+const fmt=(n,d=1)=>n==null?'—':(+n).toFixed(d).replace(/\.0$/,'');
+let db=null,charts={};
+try{ db=supabase.createClient('https://dktaxuguvfvqfhkjghjc.supabase.co','sb_publishable_NCosGOGEio07fybGZ9sdtg_xkyrd0-5'); }
+catch(e){ $('loading').textContent='Could not reach Cuilvor — check your connection and refresh.'; }
 
-function fail(msg){ $('loading').textContent = msg; }
+function show(view){ $('loading').style.display='none'; $('auth').style.display=view==='auth'?'block':'none'; $('app').style.display=view==='app'?'block':'none'; }
 
-try{
-  db = supabase.createClient('https://dktaxuguvfvqfhkjghjc.supabase.co','sb_publishable_NCosGOGEio07fybGZ9sdtg_xkyrd0-5');
-}catch(e){ fail('Could not reach the sign-in service — check your connection and refresh.'); }
-
-async function googleLogin(){
-  const {error} = await db.auth.signInWithOAuth({provider:'google', options:{redirectTo: location.origin + location.pathname}});
-  if(error) $('authmsg').textContent = error.message;
-}
+/* auth */
+async function googleLogin(){ const {error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}}); if(error)$('authmsg').textContent=error.message; }
 async function sendLink(){
-  const email = $('email').value.trim();
-  if(!email) return;
-  const {error} = await db.auth.signInWithOtp({email, options:{emailRedirectTo: location.origin + location.pathname}});
-  $('authmsg').textContent = error ? error.message : 'Check your email for the sign-in link.';
+  const email=$('email').value.trim(); if(!email)return;
+  const {error}=await db.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
+  $('authmsg').textContent=error?error.message:'Check your email for the sign-in link ✓';
 }
 async function signOut(){ await db.auth.signOut(); location.reload(); }
 
-function show(view){
-  $('loading').style.display='none';
-  $('auth').style.display = view==='auth' ? 'block' : 'none';
-  $('app').style.display = view==='app' ? 'block' : 'none';
-}
+/* tabs */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id===t.dataset.v));
+});
 
+/* boot */
 async function init(){
-  if(!db) return;
+  if(!db)return;
   try{
-    const {data:{session}} = await db.auth.getSession();
-    if(!session){ show('auth'); return; }
-    show('app');
-    $('weekof').textContent = new Date().toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
-    loadAll();
-  }catch(e){ show('auth'); }
+    const {data:{session}}=await db.auth.getSession();
+    if(!session){show('auth');return;}
+    boot(session);
+  }catch(e){show('auth');}
 }
-if(db) db.auth.onAuthStateChange((_e,s)=>{ if(s){ show('app'); loadAll(); }});
+db&&db.auth.onAuthStateChange((_e,s)=>{ if(s&&$('app').style.display==='none') boot(s); });
+function boot(session){
+  show('app');
+  $('today').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'});
+  $('whoami').textContent='Signed in as '+(session.user.email||'');
+  loadMetrics(); loadMeals(); loadReview(); loadBio(); loadKeyStatus();
+}
 
+/* quick log -> AI parse via edge function */
 async function quickLog(){
-  const t = $('logtext').value.trim();
-  if(!t) return;
-  const {error} = await db.rpc('log_health_entry',{p_raw:t,p_type:'note'});
-  $('logmsg').textContent = error ? error.message : 'Logged ✓ (Claude will parse it)';
-  if(!error) $('logtext').value='';
-  loadMeals();
+  const t=$('logtext').value.trim(); if(!t)return;
+  const btn=$('logbtn'); btn.disabled=true; btn.textContent='Parsing…';
+  $('logmsg').className='msg'; $('logmsg').textContent=''; $('logchips').innerHTML='';
+  try{
+    const {data,error}=await db.functions.invoke('parse-log',{body:{text:t}});
+    if(error){
+      let detail=''; try{ detail=JSON.parse(await error.context.text()).message||''; }catch(_){}
+      throw new Error(detail||error.message);
+    }
+    if(data.error==='no_key'){ $('logmsg').className='msg err'; $('logmsg').textContent='Add your AI key in Settings first — then logging parses itself.'; return; }
+    const p=data.parsed||{};
+    const chips=[];
+    (p.meals||[]).forEach(m=>chips.push(`<span class="chip"><b>${esc(m.food)}</b>${m.kcal?` ${Math.round(m.kcal)} kcal`:''}${m.protein_g?` · ${Math.round(m.protein_g)}g P`:''}</span>`));
+    (p.meds||[]).forEach(m=>chips.push(`<span class="chip">${esc(m.name)}${m.dose?` <b>${esc(m.dose)}</b>`:''}</span>`));
+    const mt=p.metrics||{};
+    if(mt.sleep_hours!=null)chips.push(`<span class="chip">sleep <b>${mt.sleep_hours}h</b></span>`);
+    if(mt.energy!=null)chips.push(`<span class="chip">energy <b>${mt.energy}/10</b></span>`);
+    if(mt.weight_kg!=null)chips.push(`<span class="chip">weight <b>${mt.weight_kg}kg</b></span>`);
+    $('logchips').innerHTML=chips.join('');
+    $('logmsg').textContent=`Logged ✓${data.summary&&data.summary.kcal?` — ${data.summary.kcal} kcal, ${data.summary.protein_g}g protein`:''}`;
+    $('logtext').value='';
+    loadMeals(); loadMetrics();
+  }catch(e){ $('logmsg').className='msg err'; $('logmsg').textContent=e.message||'Something went wrong — try again.'; }
+  finally{ btn.disabled=false; btn.textContent='Log it'; }
+}
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* on-demand review */
+async function runReview(){
+  const btn=$('runbtn'); btn.disabled=true; btn.textContent='Coaching… ~20s';
+  $('rmsg').className='msg'; $('rmsg').textContent='';
+  try{
+    const {data,error}=await db.functions.invoke('weekly-review',{body:{}});
+    if(error){ let d=''; try{ d=JSON.parse(await error.context.text()).message||''; }catch(_){} throw new Error(d||error.message); }
+    if(data.error==='no_key'){ $('rmsg').className='msg err'; $('rmsg').textContent='Add your AI key in Settings to unlock coaching.'; return; }
+    renderReview({full_report:data.report,week_start:new Date().toISOString().slice(0,10)});
+  }catch(e){ $('rmsg').className='msg err'; $('rmsg').textContent=e.message||'Review failed — try again.'; }
+  finally{ btn.disabled=false; btn.textContent='Run my review now'; }
+}
+function renderReview(r){
+  $('rwhen').textContent='Weekly review · '+new Date(r.week_start).toLocaleDateString(undefined,{day:'numeric',month:'short'});
+  $('rtitle').textContent='Your week, decoded.';
+  $('rbody').textContent=r.full_report||r.recommendations||'';
 }
 
-async function loadAll(){ loadMetrics(); loadMeals(); loadReview(); loadBiomarkers(); }
-
+/* data loads (all through RLS-scoped views) */
 async function loadMetrics(){
-  const since = new Date(Date.now()-14*864e5).toISOString().slice(0,10);
-  const {data,error} = await db.from('v_health_daily_metrics').select('*').gte('day',since).order('day');
-  if(error){ console.error(error); return; }
-  const days = data||[];
-  const last = days[days.length-1]||{};
-  const avg = k => { const v=days.map(d=>d[k]).filter(x=>x!=null); return v.length? v.reduce((a,b)=>a+ +b,0)/v.length : null; };
-  const today = new Date().toISOString().slice(0,10);
-  const {data:mealsToday} = await db.from('v_health_meals').select('kcal,protein_g').gte('ts',today).neq('source','sample');
-  const kcal = (mealsToday||[]).reduce((a,m)=>a+(+m.kcal||0),0);
-  const prot = (mealsToday||[]).reduce((a,m)=>a+(+m.protein_g||0),0);
-  $('kpis').innerHTML = [
-    ['Sleep (14d avg)', fmt(avg('sleep_hours'))+'h', last.sleep_hours?`last: ${fmt(last.sleep_hours)}h`:''],
-    ['HRV (14d avg)', fmt(avg('hrv_ms'),0)+' ms', last.hrv_ms?`last: ${fmt(last.hrv_ms,0)}`:''],
-    ['Resting HR', fmt(avg('resting_hr'),0)+' bpm', ''],
-    ['Today', `${Math.round(kcal)} kcal`, `${Math.round(prot)}g protein`],
-  ].map(([l,v,t])=>`<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="t">${t}</div></div>`).join('');
-  drawChart('sleepChart','Sleep (h)', days.map(d=>d.day.slice(5)), days.map(d=>d.sleep_hours), '#5ad8a6');
-  drawChart('hrvChart','HRV (ms)', days.map(d=>d.day.slice(5)), days.map(d=>d.hrv_ms), '#5aa9e8');
+  const since=new Date(Date.now()-14*864e5).toISOString().slice(0,10);
+  const {data}=await db.from('v_health_daily_metrics').select('*').gte('day',since).order('day');
+  const days=data||[]; const last=days[days.length-1]||{};
+  const avg=k=>{const v=days.map(d=>d[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+ +b,0)/v.length:null;};
+  const today=new Date().toISOString().slice(0,10);
+  const {data:mt}=await db.from('v_health_meals').select('kcal,protein_g').gte('ts',today).neq('source','sample');
+  const kcal=(mt||[]).reduce((a,m)=>a+(+m.kcal||0),0), prot=(mt||[]).reduce((a,m)=>a+(+m.protein_g||0),0);
+  $('kpis').innerHTML=[
+    ['Sleep · 14d',fmt(avg('sleep_hours'))+'<small>h</small>',last.sleep_hours?`last ${fmt(last.sleep_hours)}h`:'log or connect a wearable'],
+    ['HRV · 14d',fmt(avg('hrv_ms'),0)+'<small>ms</small>',last.hrv_ms?'':'wearable fills this'],
+    ['Resting HR',fmt(avg('resting_hr'),0)+'<small>bpm</small>',''],
+    ['Today',Math.round(kcal)+'<small>kcal</small>',Math.round(prot)+'g protein'],
+  ].map(([l,v,t])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="t">${t}</div></div>`).join('');
+  draw('c-sleep',days.map(d=>d.day.slice(5)),days.map(d=>d.sleep_hours),'#67f5c0');
+  draw('c-hrv',days.map(d=>d.day.slice(5)),days.map(d=>d.hrv_ms),'#7fb2ff');
 }
-function drawChart(id,label,labels,vals,color){
-  if(charts[id]) charts[id].destroy();
-  charts[id] = new Chart($(id),{type:'line',data:{labels,datasets:[{label,data:vals,borderColor:color,backgroundColor:color+'22',tension:.35,fill:true,spanGaps:true}]},
-    options:{plugins:{legend:{labels:{color:'#8fa09b'}}},scales:{x:{ticks:{color:'#8fa09b'},grid:{color:'#242b2f'}},y:{ticks:{color:'#8fa09b'},grid:{color:'#242b2f'}}}}});
+function draw(id,labels,vals,color){
+  if(charts[id])charts[id].destroy();
+  charts[id]=new Chart($(id),{type:'line',data:{labels,datasets:[{data:vals,borderColor:color,backgroundColor:color+'1f',borderWidth:2,pointRadius:2,pointBackgroundColor:color,tension:.4,fill:true,spanGaps:true}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#4d5f58',font:{size:9},maxTicksLimit:7},grid:{display:false}},
+              y:{ticks:{color:'#4d5f58',font:{size:9},maxTicksLimit:4},grid:{color:'#16241f'}}}}});
 }
 async function loadMeals(){
-  const {data} = await db.from('v_health_meals').select('*').order('ts',{ascending:false}).limit(12);
-  $('mealsTable').querySelector('tbody').innerHTML = (data||[]).map(m=>
-    `<tr><td>${new Date(m.ts).toLocaleString(undefined,{weekday:'short',hour:'2-digit',minute:'2-digit'})}</td><td>${m.food}${m.source==='sample'?' <span class="pill">sample</span>':''}</td><td>${m.qty||''}</td><td>${fmt(m.kcal,0)}</td><td>${fmt(m.protein_g,0)}g</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Nothing logged yet — tell Claude what you ate.</td></tr>';
+  const {data}=await db.from('v_health_meals').select('*').neq('source','sample').order('ts',{ascending:false}).limit(10);
+  const rows=data||[];
+  $('mealsEmpty').style.display=rows.length?'none':'block';
+  $('mealsTable').style.display=rows.length?'table':'none';
+  $('mealsTable').querySelector('tbody').innerHTML=rows.map(m=>
+    `<tr><td style="color:var(--dim)">${new Date(m.ts).toLocaleDateString(undefined,{weekday:'short'})} ${new Date(m.ts).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})}</td><td>${esc(m.food)}</td><td>${fmt(m.kcal,0)}</td><td>${fmt(m.protein_g,0)}g</td></tr>`).join('');
 }
 async function loadReview(){
-  const {data} = await db.from('v_health_weekly_reviews').select('*').order('week_start',{ascending:false}).limit(1);
-  if(data && data[0]) { $('review').classList.remove('muted'); $('review').textContent = data[0].full_report || data[0].recommendations; }
+  const {data}=await db.from('v_health_weekly_reviews').select('*').order('week_start',{ascending:false}).limit(1);
+  if(data&&data[0])renderReview(data[0]);
 }
-async function loadBiomarkers(){
-  const {data} = await db.from('v_health_biomarkers').select('*').neq('flag','normal').not('flag','is',null).order('test_date',{ascending:false}).limit(15);
-  const rows = data||[];
-  $('bioTable').querySelector('tbody').innerHTML = rows.map(b=>
-    `<tr><td>${b.test_date}</td><td>${b.name}</td><td>${b.value??b.value_text} ${b.unit||''}</td><td>${b.ref_low??''}–${b.ref_high??''}</td><td class="${b.flag==='critical'?'bad':'warn'}">${b.flag}</td></tr>`).join('');
-  $('biomsg').textContent = rows.length? '' : 'No flagged biomarkers — share a lab PDF or screenshot with Claude to add blood work.';
+async function loadBio(){
+  const {data}=await db.from('v_health_biomarkers').select('*').order('test_date',{ascending:false}).limit(40);
+  const rows=data||[];
+  $('bioEmpty').style.display=rows.length?'none':'block';
+  $('bioTable').style.display=rows.length?'table':'none';
+  $('bioTable').querySelector('tbody').innerHTML=rows.map(b=>{
+    const cls=b.flag==='high'||b.flag==='critical'?'p-high':b.flag==='low'?'p-low':b.flag==='normal'?'p-ok':'p-dim';
+    return `<tr><td style="color:var(--dim)">${b.test_date}</td><td>${esc(b.name)}</td><td>${b.value??esc(b.value_text||'')} ${esc(b.unit||'')}</td><td style="color:var(--dim)">${b.ref_low??''}–${b.ref_high??''}</td><td><span class="pill ${cls}">${b.flag||'—'}</span></td></tr>`;
+  }).join('');
+}
+async function loadKeyStatus(){
+  try{
+    const {data}=await db.rpc('ai_key_status');
+    if(data&&data.length){ $('keydot').className='dot ok'; $('keystat').textContent=`Key configured (${data[0].provider}) — parsing & coaching active.`; if(data[0].provider)$('provider').value=data[0].provider; }
+    else{ $('keydot').className='dot'; $('keystat').textContent='No key yet — parsing & coaching are off.'; }
+  }catch(e){ $('keystat').textContent='—'; }
+}
+async function saveKey(){
+  const k=$('apikey').value.trim();
+  if(k.length<20){ $('keymsg').className='msg err'; $('keymsg').textContent='That doesn’t look like an API key.'; return; }
+  const {error}=await db.rpc('save_ai_key',{p_provider:$('provider').value,p_key:k});
+  $('keymsg').className='msg'+(error?' err':'');
+  $('keymsg').textContent=error?error.message:'Saved ✓ — your coach is live. Try the quick log.';
+  if(!error){ $('apikey').value=''; loadKeyStatus(); }
 }
 init();
 </script>

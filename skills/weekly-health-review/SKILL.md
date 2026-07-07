@@ -10,8 +10,8 @@ The job a $15k/yr longevity coach does: read the data, find the trend, prescribe
 ## Data (Supabase project `dktaxuguvfvqfhkjghjc`, MCP execute_sql)
 
 ## Multi-tenant rule (IMPORTANT)
-The database is per-user. When operating via the Supabase MCP (admin connection), ALWAYS resolve Paul's account first:
-`select id from public.profiles where is_owner limit 1;`
+The database is per-user. When operating via the Supabase MCP (admin connection), ALWAYS resolve accounts first:
+`select id, email, is_owner from public.profiles;` — run the review for EACH household profile, saving each report under their user_id. Deliver Paul's (is_owner) in full; other members get a one-line headline only (their full review appears in their own app).
 If no row exists yet, stop and tell Paul: "Sign in to the Cuilvor app once (magic link) — that creates your account, then I can log data."
 Include that user_id explicitly in EVERY insert/upsert, and filter EVERY select with `where user_id = '<owner-id>'`. Never read or write other users' rows.
 1. This week (owner-scoped, v_week_summary won't work for admin): last-7-days selects on health.daily_metrics, health.meals, health.med_events, health.log_entries — each `where user_id = '<owner-id>'`.
