@@ -280,6 +280,7 @@
       <h3 class="serif" style="font-size:19px">Your AI key</h3>
       <p class="note">Cuilvor's parsing and coaching run on <b>your own</b> AI account, so your usage is yours alone. Get a key from <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> (Claude) or <a href="https://platform.openai.com" target="_blank" rel="noopener">platform.openai.com</a>. It's stored server-side, never shown again, and only ever used for your requests.</p>
       <div class="keystat"><span class="dot" id="keydot"></span><span id="keystat">Checking…</span></div>
+      <p class="note" id="hhnote" style="display:none;color:var(--mint)">Household account: your coaching runs on the family Claude — no key needed. Adding your own key is optional and unlocks instant parsing + on-demand reviews.</p>
       <label>Provider</label>
       <select id="provider"><option value="anthropic">Anthropic (Claude)</option><option value="openai">OpenAI</option></select>
       <label>API key</label>
@@ -316,7 +317,7 @@
 document.getElementById('loading').style.display='block';
 const $=id=>document.getElementById(id);
 const fmt=(n,d=1)=>n==null?'—':(+n).toFixed(d).replace(/\.0$/,'');
-let db=null,charts={};
+let db=null,charts={},isHH=false;
 const localDay=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const localMonday=()=>{const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 try{ db=supabase.createClient('https://dktaxuguvfvqfhkjghjc.supabase.co','sb_publishable_NCosGOGEio07fybGZ9sdtg_xkyrd0-5'); }
@@ -353,6 +354,7 @@ function boot(session){
   show('app');
   $('today').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'});
   $('whoami').textContent='Signed in as '+(session.user.email||'');
+  db.from('profiles').select('is_household').limit(1).then(({data})=>{ isHH=!!(data&&data[0]&&data[0].is_household); });
   loadMetrics(); loadMeals(); loadReview(); loadBio(); loadKeyStatus(); loadWorkouts(); loadPlan(); checkOnboard(); loadTrends(); loadNudges();
 }
 
@@ -371,7 +373,12 @@ async function quickLog(){
       throw new Error(detail||error.message);
     }
     const d=data||{};
-    if(d.error==='no_key'){ $('logmsg').className='msg err'; $('logmsg').textContent='Add your AI key in Settings first — then logging parses itself.'; return; }
+    if(d.error==='no_key'){
+      if(isHH){ const {error:re}=await db.rpc('log_health_entry',{p_raw:t,p_type:'note'});
+        if(!re){ $('logmsg').textContent='Logged ✓ — your household coach will parse this (it appears after the next review, or ask Claude anytime).'; $('logtext').value=''; }
+        else { $('logmsg').className='msg err'; $('logmsg').textContent=re.message; }
+        return; }
+      $('logmsg').className='msg err'; $('logmsg').textContent='Add your AI key in Settings first — then logging parses itself.'; return; }
     const p=d.parsed||{};
     const chips=[];
     (p.meals||[]).forEach(m=>chips.push(`<span class="chip"><b>${esc(m.food)}</b>${n2(m.kcal)?` ${Math.round(n2(m.kcal))} kcal`:''}${n2(m.protein_g)?` · ${Math.round(n2(m.protein_g))}g P`:''}</span>`));
@@ -401,7 +408,7 @@ async function runReview(){
     ]);
     if(error){ let dd=''; try{ if(error.context&&error.context.text) dd=(JSON.parse(await error.context.text())||{}).message||''; }catch(_){} throw new Error(dd||error.message); }
     const d=data||{};
-    if(d.error==='no_key'){ $('rmsg').className='msg err'; $('rmsg').textContent='Add your AI key in Settings to unlock coaching.'; return; }
+    if(d.error==='no_key'){ $('rmsg').className='msg'; $('rmsg').textContent=isHH?'Your review is written by the household coach every Sunday — it appears right here. (Add your own key in Settings if you want on-demand reviews too.)':'Add your AI key in Settings to unlock coaching.'; return; }
     if(d.error==='cooldown'){ $('rmsg').textContent=d.message; return; }
     renderReview({full_report:d.report,week_start:d.week_start||localMonday()});
   }catch(e){ $('rmsg').className='msg err'; $('rmsg').textContent=e.message||'Review failed — try again.'; }
@@ -465,7 +472,7 @@ async function loadKeyStatus(){
   try{
     const {data}=await db.rpc('ai_key_status');
     if(data&&data.length){ $('keydot').className='dot ok'; $('keystat').textContent=`Key configured (${data[0].provider}) — parsing & coaching active.`; if(data[0].provider)$('provider').value=data[0].provider; }
-    else{ $('keydot').className='dot'; $('keystat').textContent='No key yet — parsing & coaching are off.'; }
+    else{ $('keydot').className='dot'+(isHH?' ok':''); $('keystat').textContent=isHH?'No personal key — household coaching active.':'No key yet — parsing & coaching are off.'; if(isHH)$('hhnote').style.display='block'; }
   }catch(e){ $('keystat').textContent='—'; }
 }
 async function saveKey(){
@@ -491,7 +498,7 @@ async function photoLog(inp){
       new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timed out — try again.')),90000))]);
     if(error){let dd='';try{if(error.context&&error.context.text)dd=(JSON.parse(await error.context.text())||{}).message||'';}catch(_){ } throw new Error(dd||error.message);}
     const d=data||{};
-    if(d.error==='no_key'){ $('logmsg').className='msg err'; $('logmsg').textContent='Add your AI key in Settings first.'; return; }
+    if(d.error==='no_key'){ $('logmsg').className='msg err'; $('logmsg').textContent=isHH?'Photo parsing runs on the household coach — share the photo with Claude in chat, or add your own key in Settings for instant parsing.':'Add your AI key in Settings first.'; return; }
     const chips=((d.parsed||{}).meals||[]).map(m=>`<span class="chip"><b>${esc(m.food)}</b>${n2(m.kcal)?` ${Math.round(n2(m.kcal))} kcal`:''}</span>`);
     $('logchips').innerHTML=chips.join('');
     $('logmsg').textContent=`Photo logged ✓ — ${d.summary?d.summary.kcal+' kcal, '+d.summary.protein_g+'g protein':''}`;
@@ -509,7 +516,7 @@ async function wod(request){
       new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timed out — try again.')),90000))]);
     if(error){let dd='';try{if(error.context&&error.context.text)dd=(JSON.parse(await error.context.text())||{}).message||'';}catch(_){ } throw new Error(dd||error.message);}
     const d=data||{};
-    if(d.error==='no_key'){ $('wodmsg').className='msg err'; $('wodmsg').textContent='Add your AI key in Settings to unlock the workout coach.'; return; }
+    if(d.error==='no_key'){ $('wodmsg').className='msg'; $('wodmsg').textContent=isHH?'On-demand workouts need an AI key — or just ask the household Claude for today\'s session. Your plan and history live here either way.':'Add your AI key in Settings to unlock the workout coach.'; return; }
     if(d.error){ $('wodmsg').className='msg err'; $('wodmsg').textContent=d.message||d.error; return; }
     const w=d.workout; $('wodmsg').textContent='';
     $('wodout').style.display='block';
