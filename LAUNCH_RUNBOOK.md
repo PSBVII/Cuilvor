@@ -10,11 +10,11 @@ Ships: workout engine (Train tab), photo meal logging, onboarding, data export,
 account deletion, installable PWA, comparison pages, legal pages, all fixes.
 
 ## 2. Resend (magic-link emails + weekly review emails)
-1. resend.com → Domains → Add cuilvor.com → add the DNS records it shows at GoDaddy.
+1. resend.com → Domains → Add mail.cuilvor.com (subdomain — protects main-domain reputation) → add the DNS records it shows at GoDaddy.
 2. resend.com → API Keys → Create → copy the key (starts re_).
 3. Paste it in TWO places:
    a. Supabase → Project Settings → Auth → SMTP: host smtp.resend.com, port 465,
-      user "resend", password = the key, sender coach@cuilvor.com. (Fixes rate-limited magic links.)
+      user "resend", password = the key, sender coach@mail.cuilvor.com. (Fixes rate-limited magic links.)
    b. Supabase → Edge Functions → cron-weekly-reviews → Secrets → add RESEND_API_KEY = the key.
       (Turns on Sunday review emails to every user — code already checks for it.)
 
