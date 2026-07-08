@@ -333,6 +333,15 @@ document.getElementById('loading').style.display='block';
 const $=id=>document.getElementById(id);
 const fmt=(n,d=1)=>n==null?'—':(+n).toFixed(d).replace(/\.0$/,'');
 let db=null,charts={},isHH=false;
+async function loadHH(){
+  for(let i=0;i<3;i++){
+    try{
+      const {data,error}=await db.from('profiles').select('is_household').limit(1);
+      if(!error&&data&&data.length){ isHH=!!data[0].is_household; return; }
+    }catch(e){}
+    await new Promise(r=>setTimeout(r,900));
+  }
+}
 const localDay=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const localMonday=()=>{const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 try{ db=supabase.createClient('https://dktaxuguvfvqfhkjghjc.supabase.co','sb_publishable_NCosGOGEio07fybGZ9sdtg_xkyrd0-5'); }
@@ -369,7 +378,7 @@ function boot(session){
   show('app');
   $('today').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'});
   $('whoami').textContent='Signed in as '+(session.user.email||'');
-  db.from('profiles').select('is_household').limit(1).then(({data})=>{ isHH=!!(data&&data[0]&&data[0].is_household); });
+  loadHH();
   loadMetrics(); loadMeals(); loadReview(); loadBio(); loadKeyStatus(); loadWorkouts(); loadPlan(); checkOnboard(); loadTrends(); loadNudges(); loadCoachPrefs(); loadWearables();
 }
 
