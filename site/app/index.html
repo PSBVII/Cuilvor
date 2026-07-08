@@ -142,6 +142,7 @@
 
   <div class="tabs">
     <button class="tab on" data-v="v-today"><span class="ic">☀️</span>Today</button>
+    <button class="tab" data-v="v-trends"><span class="ic">📈</span>Trends</button>
     <button class="tab" data-v="v-coach"><span class="ic">🧭</span>Coach</button>
     <button class="tab" data-v="v-train"><span class="ic">🏋️</span>Train</button>
     <button class="tab" data-v="v-labs"><span class="ic">🩸</span>Labs</button>
@@ -187,6 +188,30 @@
     <div class="card" style="overflow-x:auto">
       <table id="mealsTable"><thead><tr><th>When</th><th>Food</th><th>kcal</th><th>Protein</th></tr></thead><tbody></tbody></table>
       <div class="empty" id="mealsEmpty" style="display:none"><span class="big">🍳</span>Nothing logged yet — say what you ate above.</div>
+    </div>
+  </div>
+
+  <!-- TRENDS -->
+  <div class="view" id="v-trends">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px" id="rangepills">
+      <button class="btn ghost rangepill" data-days="30">30 days</button>
+      <button class="btn ghost rangepill on" data-days="90" style="border-color:var(--mint);color:var(--mint)">90 days</button>
+      <button class="btn ghost rangepill" data-days="365">1 year</button>
+      <button class="btn ghost rangepill" data-days="3650">All time</button>
+    </div>
+    <div class="charts">
+      <div class="chartwrap"><span class="cl">Weight · kg</span><canvas id="t-weight"></canvas></div>
+      <div class="chartwrap"><span class="cl">Sleep · 7-day rolling avg</span><canvas id="t-sleep"></canvas></div>
+      <div class="chartwrap"><span class="cl">HRV · ms</span><canvas id="t-hrv"></canvas></div>
+      <div class="chartwrap"><span class="cl">Resting HR · bpm</span><canvas id="t-rhr"></canvas></div>
+      <div class="chartwrap"><span class="cl">Protein · weekly avg g/day</span><canvas id="t-protein"></canvas></div>
+      <div class="chartwrap"><span class="cl">Training · sessions per week</span><canvas id="t-train"></canvas></div>
+    </div>
+    <h2>Biomarker explorer</h2>
+    <div class="card">
+      <select id="bioSel" onchange="drawBioTrend()" style="margin-bottom:12px"><option value="">Choose a biomarker…</option></select>
+      <div class="chartwrap" style="height:220px"><span class="cl" id="bioTrendLbl">Across every panel you've taken</span><canvas id="t-bio"></canvas></div>
+      <p class="muted" style="margin-top:10px;font-size:12.5px">Dashed lines are the reference range from your most recent report. Slow drifts hide in single results — they can't hide here.</p>
     </div>
   </div>
 
@@ -317,7 +342,7 @@ function boot(session){
   show('app');
   $('today').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'});
   $('whoami').textContent='Signed in as '+(session.user.email||'');
-  loadMetrics(); loadMeals(); loadReview(); loadBio(); loadKeyStatus(); loadWorkouts(); loadPlan(); checkOnboard();
+  loadMetrics(); loadMeals(); loadReview(); loadBio(); loadKeyStatus(); loadWorkouts(); loadPlan(); checkOnboard(); loadTrends();
 }
 
 /* quick log -> AI parse via edge function */
@@ -396,9 +421,9 @@ async function loadMetrics(){
   draw('c-sleep',dd.map(x=>x.day.slice(5)),dd.map(x=>x.sleep_hours),'#67f5c0');
   draw('c-hrv',dd.map(x=>x.day.slice(5)),dd.map(x=>x.hrv_ms),'#7fb2ff');
 }
-function draw(id,labels,vals,color){
+function draw(id,labels,vals,color,kind){
   if(charts[id])charts[id].destroy();
-  charts[id]=new Chart($(id),{type:'line',data:{labels,datasets:[{data:vals,borderColor:color,backgroundColor:color+'1f',borderWidth:2,pointRadius:2,pointBackgroundColor:color,tension:.4,fill:true,spanGaps:true}]},
+  charts[id]=new Chart($(id),{type:kind||'line',data:{labels,datasets:[{data:vals,borderColor:color,backgroundColor:color+'1f',borderWidth:2,pointRadius:2,pointBackgroundColor:color,tension:.4,fill:true,spanGaps:true}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
       scales:{x:{ticks:{color:'#4d5f58',font:{size:9},maxTicksLimit:7},grid:{display:false}},
               y:{ticks:{color:'#4d5f58',font:{size:9},maxTicksLimit:4},grid:{color:'#16241f'}}}}});
@@ -554,6 +579,59 @@ async function deleteAccount(){
   const {error}=await db.rpc('delete_my_account',{p_confirm:phrase});
   if(error){ $('acctmsg').textContent=error.message; return; }
   await db.auth.signOut(); location.href='/';
+}
+
+/* ---- Trends ---- */
+let trendDays=90;
+document.querySelectorAll('.rangepill').forEach(b=>b.onclick=()=>{
+  trendDays=+b.dataset.days;
+  document.querySelectorAll('.rangepill').forEach(x=>{x.style.borderColor='';x.style.color='';});
+  b.style.borderColor='var(--mint)';b.style.color='var(--mint)';
+  loadTrends();
+});
+const roll=(arr,n)=>arr.map((_,i)=>{const w=arr.slice(Math.max(0,i-n+1),i+1).filter(v=>v!=null);return w.length?w.reduce((a,b)=>a+b,0)/w.length:null;});
+const isoWeek=d=>{const dt=new Date(d);dt.setHours(0,0,0,0);dt.setDate(dt.getDate()+3-((dt.getDay()+6)%7));const w1=new Date(dt.getFullYear(),0,4);return dt.getFullYear()+'-W'+String(1+Math.round(((dt-w1)/864e5-3+((w1.getDay()+6)%7))/7)).padStart(2,'0');};
+async function loadTrends(){
+  const since=new Date(Date.now()-trendDays*864e5).toISOString().slice(0,10);
+  const {data:dm}=await db.from('v_health_daily_metrics').select('day,weight_kg,sleep_hours,hrv_ms,resting_hr').gte('day',since).order('day');
+  const days=(dm||[]).filter(x=>x&&x.day);
+  const L=days.map(x=>x.day.slice(trendDays>365?0:5));
+  draw('t-weight',L,days.map(x=>x.weight_kg),'#f0d089');
+  draw('t-sleep',L,roll(days.map(x=>x.sleep_hours==null?null:+x.sleep_hours),7),'#67f5c0');
+  draw('t-hrv',L,days.map(x=>x.hrv_ms),'#7fb2ff');
+  draw('t-rhr',L,days.map(x=>x.resting_hr),'#f08989');
+  const {data:ml}=await db.from('v_health_meals').select('ts,protein_g').gte('ts',since).neq('source','sample').limit(10000);
+  const wk={};(ml||[]).forEach(m=>{const k=isoWeek(m.ts);(wk[k]=wk[k]||{p:0,days:new Set()});wk[k].p+=(+m.protein_g||0);wk[k].days.add(String(m.ts).slice(0,10));});
+  const wkeys=Object.keys(wk).sort();
+  draw('t-protein',wkeys.map(k=>k.slice(5)),wkeys.map(k=>Math.round(wk[k].p/Math.max(1,wk[k].days.size))),'#3ecfcf','bar');
+  const {data:wo}=await db.from('v_health_workouts').select('ts,planned').gte('ts',since).eq('planned',false).limit(5000);
+  const tw={};(wo||[]).forEach(w=>{const k=isoWeek(w.ts);tw[k]=(tw[k]||0)+1;});
+  const tkeys=Object.keys(tw).sort();
+  draw('t-train',tkeys.map(k=>k.slice(5)),tkeys.map(k=>tw[k]),'#67f5c0','bar');
+  loadBioNames();
+}
+async function loadBioNames(){
+  if($('bioSel').options.length>1)return;
+  const {data}=await db.from('v_health_biomarkers').select('name').limit(2000);
+  const names=[...new Set((data||[]).map(b=>b.name))].sort();
+  $('bioSel').innerHTML='<option value="">Choose a biomarker…</option>'+names.map(n=>`<option>${esc(n)}</option>`).join('');
+}
+async function drawBioTrend(){
+  const name=$('bioSel').value; if(!name)return;
+  const {data}=await db.from('v_health_biomarkers').select('test_date,value,unit,ref_low,ref_high').eq('name',name).order('test_date').limit(200);
+  const rows=(data||[]).filter(b=>b.value!=null);
+  if(!rows.length){$('bioTrendLbl').textContent='No numeric values for '+name;return;}
+  const last=rows[rows.length-1];
+  $('bioTrendLbl').textContent=name+(last.unit?' · '+last.unit:'');
+  const L=rows.map(b=>b.test_date), V=rows.map(b=>+b.value);
+  if(charts['t-bio'])charts['t-bio'].destroy();
+  const ds=[{data:V,borderColor:'#67f5c0',backgroundColor:'#67f5c01f',borderWidth:2,pointRadius:4,pointBackgroundColor:'#67f5c0',tension:.3,fill:false}];
+  if(last.ref_low!=null)ds.push({data:L.map(()=>+last.ref_low),borderColor:'#f0d08966',borderDash:[6,5],borderWidth:1.5,pointRadius:0,fill:false});
+  if(last.ref_high!=null)ds.push({data:L.map(()=>+last.ref_high),borderColor:'#f0d08966',borderDash:[6,5],borderWidth:1.5,pointRadius:0,fill:false});
+  charts['t-bio']=new Chart($('t-bio'),{type:'line',data:{labels:L,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#4d5f58',font:{size:9},maxTicksLimit:8},grid:{display:false}},
+              y:{ticks:{color:'#4d5f58',font:{size:9},maxTicksLimit:5},grid:{color:'#16241f'}}}}});
 }
 
 /* ---- PWA ---- */
