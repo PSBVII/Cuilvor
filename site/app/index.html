@@ -300,6 +300,21 @@
       <div class="msg" id="ngmsg"></div>
     </div>
     <div class="card set" style="margin-top:14px">
+      <h3 class="serif" style="font-size:19px">Coach preferences</h3>
+      <p class="note">Life beats the plan sometimes. Tell the coach what's off the table — it will respect it instead of nagging.</p>
+      <label>Things the coach should never suggest changing (one per line)</label>
+      <textarea id="cp-off" rows="3" placeholder="e.g. late nights on Fridays and Saturdays — that's family time&#10;my morning coffee"></textarea>
+      <label>Suggestions per weekly review</label>
+      <select id="cp-max"><option value="1">1 — just the biggest thing</option><option value="2" selected>2 — the default</option><option value="3">3</option><option value="4">4 — I like homework</option></select>
+      <button class="btn" style="margin-top:14px" onclick="saveCoachPrefs()">Save preferences</button>
+      <div class="msg" id="cpmsg"></div>
+    </div>
+    <div class="card set" style="margin-top:14px">
+      <h3 class="serif" style="font-size:19px">Wearables</h3>
+      <p class="note">Connect once, and sleep/HRV/recovery flow in automatically. Rolling out per vendor — buttons light up as each goes live.</p>
+      <div id="wearlist" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
+    </div>
+    <div class="card set" style="margin-top:14px">
       <h3 class="serif" style="font-size:19px">Account</h3>
       <p class="note" id="whoami"></p>
       <button class="btn ghost" style="margin-top:10px" onclick="signOut()">Sign out</button>
@@ -355,7 +370,7 @@ function boot(session){
   $('today').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'});
   $('whoami').textContent='Signed in as '+(session.user.email||'');
   db.from('profiles').select('is_household').limit(1).then(({data})=>{ isHH=!!(data&&data[0]&&data[0].is_household); });
-  loadMetrics(); loadMeals(); loadReview(); loadBio(); loadKeyStatus(); loadWorkouts(); loadPlan(); checkOnboard(); loadTrends(); loadNudges();
+  loadMetrics(); loadMeals(); loadReview(); loadBio(); loadKeyStatus(); loadWorkouts(); loadPlan(); checkOnboard(); loadTrends(); loadNudges(); loadCoachPrefs(); loadWearables();
 }
 
 /* quick log -> AI parse via edge function */
@@ -673,6 +688,31 @@ async function saveNudges(){
   $('ngmsg').className='msg'; $('ngmsg').textContent='Nudges saved ✓ — checked hourly in your timezone ('+row.tz+').';
 }
 
+/* ---- coach preferences ---- */
+async function loadCoachPrefs(){
+  const {data}=await db.from('profiles').select('coach_prefs').limit(1);
+  if(data&&data[0]&&data[0].coach_prefs){const c=data[0].coach_prefs;
+    $('cp-off').value=(c.off_limits||[]).join('\n'); $('cp-max').value=String(c.max_changes||2);}
+}
+async function saveCoachPrefs(){
+  const {data:{user}}=await db.auth.getUser();
+  const off=$('cp-off').value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,10);
+  const {error}=await db.from('profiles').update({coach_prefs:{max_changes:+$('cp-max').value||2,off_limits:off}}).eq('id',user.id);
+  $('cpmsg').className='msg'+(error?' err':'');
+  $('cpmsg').textContent=error?error.message:'Saved ✓ — the coach will respect these from your next review.';
+}
+/* ---- wearables ---- */
+const VENDORS=[['oura','Oura Ring'],['whoop','Whoop'],['strava','Strava'],['withings','Withings'],['polar','Polar'],['garmin','Garmin'],['apple_health','Apple Health']];
+async function loadWearables(){
+  const {data}=await db.from('v_health_wearables').select('provider,status,last_sync');
+  const st={};(data||[]).forEach(w=>st[w.provider]=w);
+  $('wearlist').innerHTML=VENDORS.map(([k,label])=>{
+    const w=st[k];
+    const badge=w&&w.status==='active'?`<span class="pill p-ok">connected${w.last_sync?' · synced '+new Date(w.last_sync).toLocaleDateString():''}</span>`
+      :(k==='apple_health'?'<span class="pill p-dim">via the native app — coming</span>':'<span class="pill p-dim">coming soon</span>');
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#0a120f;border:1px solid var(--line);border-radius:12px"><span>${label}</span>${badge}</div>`;
+  }).join('');
+}
 /* ---- PWA ---- */
 if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
 
