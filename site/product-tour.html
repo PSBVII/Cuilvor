@@ -105,6 +105,7 @@
 <div class="tabs">
   <a class="tab on" href="#dash">📊 Dashboard</a>
   <a class="tab" href="#review">☀️ Weekly review</a>
+  <a class="tab" href="#train">🏋️ Train</a>
   <a class="tab" href="#labs">🩸 Bloodwork</a>
   <a class="tab" href="#log">🎙️ Log stream</a>
   <a class="tab" href="#compounds">🧪 Compounds</a>
@@ -169,9 +170,34 @@
     <p class="caption">The <b>output that replaces the coach</b>. Written to you every Sunday and saved forever. Short by design — trends, whether last week's advice stuck, and never more than two changes. Ask <b>"how am I doing?"</b> any day to run it on demand.</p>
   </div>
 
+  <!-- TRAIN -->
+  <div class="view" id="train">
+    <div class="chap"><div class="n">03 · When you hit the gym</div><h2>The workout engine</h2></div>
+    <div class="app">
+      <div class="appbar"><span class="dot"></span><span class="dot" style="background:#2a3"></span><span class="dot"></span><span class="logo">cuil<i>vor</i></span>
+        <div class="appnav"><span>Today</span><span class="act">Train</span><span>Labs</span><span>Coach</span></div></div>
+      <div class="body">
+        <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mint)">pull · ~50 min</div>
+        <div style="font-family:Fraunces,serif;font-size:22px;margin:4px 0 6px">Pull day — rebalancing week</div>
+        <div style="color:var(--dim);font-size:13px;margin-bottom:14px">Volume trimmed 15% — your sleep averaged 6h20 the last three nights.</div>
+        <table>
+          <tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Load</th><th>Rest</th></tr>
+          <tr><td>Weighted pull-ups</td><td>4</td><td>6–8</td><td>+10kg (last: +7.5)</td><td>150s</td></tr>
+          <tr><td>Barbell row</td><td>4</td><td>8</td><td>75kg</td><td>120s</td></tr>
+          <tr><td>Single-arm DB row</td><td>3</td><td>10/side</td><td>32kg</td><td>90s</td></tr>
+          <tr><td>Face pulls</td><td>3</td><td>15</td><td>light, strict</td><td>60s</td></tr>
+          <tr><td>Hammer curls</td><td>3</td><td>12</td><td>14kg</td><td>60s</td></tr>
+        </table>
+        <div class="panel" style="margin-top:16px;border-color:#f0d08933"><h4 style="color:var(--gold)">Drift detected</h4>
+          <p style="font-size:13.5px;color:var(--dim)">Since your plan started 6 weeks ago you've pressed <b style="color:var(--ink)">2.8× more volume than you've pulled</b>, and zone-2 is 40% under target. This block biases pulling and adds one easy 40-min ride.</p></div>
+      </div>
+    </div>
+    <p class="caption"><b>Ask for a push, pull, legs or zone-2 day — or let the coach choose.</b> Every session is built from your plan, your last two weeks, and how you've actually been recovering. And because it remembers what your plan <em>intended</em>, it names the drift a human coach would miss.</p>
+  </div>
+
   <!-- LABS -->
   <div class="view" id="labs">
-    <div class="chap"><div class="n">03 · Whenever a test lands</div><h2>Bloodwork, decoded</h2></div>
+    <div class="chap"><div class="n">04 · Whenever a test lands</div><h2>Bloodwork, decoded</h2></div>
     <div class="app">
       <div class="appbar"><span class="dot"></span><span class="dot" style="background:#2a3"></span><span class="dot"></span><span class="logo">cuil<i>vor</i></span>
         <div class="appnav"><span>Today</span><span>Trends</span><span class="act">Labs</span><span>Coach</span></div></div>
@@ -204,13 +230,18 @@
 
   <!-- LOG STREAM -->
   <div class="view" id="log">
-    <div class="chap"><div class="n">04 · All day, in seconds</div><h2>The log stream</h2></div>
+    <div class="chap"><div class="n">05 · All day, in seconds</div><h2>The log stream</h2></div>
     <div class="stream">
       <div class="you">Had a McDonald's cheeseburger and a caramel Grenade bar, took my omega-3 and vit D</div>
       <div class="parse"><div class="t">Logged · parsed &amp; stored</div>
         <div>Cross-checked branded items against published UK nutrition data.</div>
         <div class="chips"><span class="chip"><b>Cheeseburger</b> 301 kcal · 15g P</span><span class="chip"><b>Grenade Caramel</b> 221 kcal · 22g P</span><span class="chip">Omega-3 <b>1g</b></span><span class="chip">Vit D <b>1000 IU</b></span></div>
         <div style="margin-top:8px;color:var(--mint);font-size:12.5px">Day total: 1,730 kcal · 96g protein · 148g carbs · 71g fat</div></div>
+
+      <div class="you">📷 <em>photo of tonight's plate</em></div>
+      <div class="parse"><div class="t">Photo · parsed & stored</div>
+        <div class="chips"><span class="chip"><b>Grilled chicken breast</b> ~280 kcal · 43g P</span><span class="chip"><b>Rice, ~1 cup</b> 205 kcal</span><span class="chip"><b>Broccoli</b> 55 kcal</span></div>
+        <div style="margin-top:8px;color:var(--mint);font-size:12.5px">Snap it, done — portions estimated conservatively.</div></div>
 
       <div class="you">Slept about 6½ hrs, feeling rough, skipped the gym</div>
       <div class="parse"><div class="t">Logged · daily metrics</div>
@@ -227,7 +258,7 @@
 
   <!-- COMPOUNDS -->
   <div class="view" id="compounds">
-    <div class="chap"><div class="n">05 · If you take anything</div><h2>The compound ledger</h2></div>
+    <div class="chap"><div class="n">06 · If you take anything</div><h2>The compound ledger</h2></div>
     <div class="app">
       <div class="appbar"><span class="dot"></span><span class="dot" style="background:#2a3"></span><span class="dot"></span><span class="logo">cuil<i>vor</i></span>
         <div class="appnav"><span>Today</span><span>Trends</span><span>Labs</span><span class="act">Protocol</span></div></div>
