@@ -347,15 +347,24 @@ document.getElementById('tk').innerHTML += document.getElementById('tk').innerHT
   let mx=0,my=0,scroll=0;
   addEventListener('mousemove',e=>{mx=(e.clientX/innerWidth-.5);my=(e.clientY/innerHeight-.5)});
   addEventListener('scroll',()=>{scroll=window.scrollY});
+  let lastW=0, rzT=null, dead=false, heroVis=true;
   function size(){ const w=canvas.clientWidth||innerWidth, h=canvas.clientHeight||innerHeight;
-    renderer.setSize(w,h,false); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); cam.aspect=w/h; cam.updateProjectionMatrix(); }
-  addEventListener('resize',size); size();
+    if(w===lastW) return; /* mobile URL-bar scroll fires height-only resizes - ignore */
+    lastW=w;
+    renderer.setSize(w,h,false); renderer.setPixelRatio(Math.min(devicePixelRatio, w<840?1.5:2)); cam.aspect=w/h; cam.updateProjectionMatrix(); }
+  addEventListener('resize',()=>{ clearTimeout(rzT); rzT=setTimeout(size,250); }); size();
+  canvas.addEventListener('webglcontextlost',e=>{ e.preventDefault(); dead=true; canvas.style.display='none'; },false);
+  addEventListener('scroll',()=>{ heroVis = scrollY < innerHeight*1.3; },{passive:true});
   if(innerWidth<840){ group.position.x=0; group.rotation.z=.5; canvas.style.opacity=.35; }
   (function loop(t){
-    group.rotation.y = t*.00028 + scroll*.0012;
-    group.rotation.x = my*.25; group.position.y = -mx*.6;
-    field.rotation.y = -t*.00006;
-    renderer.render(scene,cam); requestAnimationFrame(loop);
+    if(dead) return;
+    if(heroVis){
+      group.rotation.y = t*.00028 + scroll*.0012;
+      group.rotation.x = my*.25; group.position.y = -mx*.6;
+      field.rotation.y = -t*.00006;
+      renderer.render(scene,cam);
+    }
+    requestAnimationFrame(loop);
   })(0);
 }catch(e){} })();
 </script>
