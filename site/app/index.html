@@ -288,6 +288,17 @@
       <div class="msg" id="keymsg"></div>
     </div>
     <div class="card set" style="margin-top:14px">
+      <h3 class="serif" style="font-size:19px">Nudges</h3>
+      <p class="note">Gentle email reminders to your phone (they mirror to your watch). Each one is opt-in, timezone-aware, and never fires if you've already done the thing.</p>
+      <label style="display:flex;align-items:center;gap:10px;text-transform:none;font-size:14px;color:var(--ink)"><input type="checkbox" id="ng-water" style="width:auto"> Water — every
+        <select id="ng-water-h" style="width:70px"><option>1</option><option selected>2</option><option>3</option><option>4</option></select> hours, 9am–9pm</label>
+      <label style="display:flex;align-items:center;gap:10px;text-transform:none;font-size:14px;color:var(--ink)"><input type="checkbox" id="ng-wind" style="width:auto"> Wind-down for sleep at
+        <input type="time" id="ng-wind-t" value="21:45" style="width:110px"></label>
+      <label style="display:flex;align-items:center;gap:10px;text-transform:none;font-size:14px;color:var(--ink)"><input type="checkbox" id="ng-meal" style="width:auto"> "Log your meal" if nothing's logged after mealtimes</label>
+      <button class="btn" style="margin-top:14px" onclick="saveNudges()">Save nudges</button>
+      <div class="msg" id="ngmsg"></div>
+    </div>
+    <div class="card set" style="margin-top:14px">
       <h3 class="serif" style="font-size:19px">Account</h3>
       <p class="note" id="whoami"></p>
       <button class="btn ghost" style="margin-top:10px" onclick="signOut()">Sign out</button>
@@ -342,7 +353,7 @@ function boot(session){
   show('app');
   $('today').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'});
   $('whoami').textContent='Signed in as '+(session.user.email||'');
-  loadMetrics(); loadMeals(); loadReview(); loadBio(); loadKeyStatus(); loadWorkouts(); loadPlan(); checkOnboard(); loadTrends();
+  loadMetrics(); loadMeals(); loadReview(); loadBio(); loadKeyStatus(); loadWorkouts(); loadPlan(); checkOnboard(); loadTrends(); loadNudges();
 }
 
 /* quick log -> AI parse via edge function */
@@ -632,6 +643,27 @@ async function drawBioTrend(){
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
       scales:{x:{ticks:{color:'#4d5f58',font:{size:9},maxTicksLimit:8},grid:{display:false}},
               y:{ticks:{color:'#4d5f58',font:{size:9},maxTicksLimit:5},grid:{color:'#16241f'}}}}});
+}
+
+/* ---- nudges ---- */
+async function loadNudges(){
+  const {data}=await db.from('v_health_nudge_prefs').select('*').limit(1);
+  if(data&&data[0]){const n=data[0];
+    $('ng-water').checked=n.water_enabled; $('ng-water-h').value=n.water_every_h;
+    $('ng-wind').checked=n.winddown_enabled; $('ng-wind-t').value=String(n.winddown_at).slice(0,5);
+    $('ng-meal').checked=n.meal_enabled;}
+}
+async function saveNudges(){
+  const {data:{user}}=await db.auth.getUser();
+  const row={user_id:user.id, tz:(Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/London'),
+    water_enabled:$('ng-water').checked, water_every_h:+$('ng-water-h').value,
+    winddown_enabled:$('ng-wind').checked, winddown_at:$('ng-wind-t').value||'21:45',
+    meal_enabled:$('ng-meal').checked, updated_at:new Date().toISOString()};
+  const {data:upd,error:e1}=await db.from('v_health_nudge_prefs').update(row).eq('user_id',user.id).select();
+  if(e1){ $('ngmsg').className='msg err'; $('ngmsg').textContent=e1.message; return; }
+  if(!upd||!upd.length){ const {error:e2}=await db.from('v_health_nudge_prefs').insert(row);
+    if(e2){ $('ngmsg').className='msg err'; $('ngmsg').textContent=e2.message; return; } }
+  $('ngmsg').className='msg'; $('ngmsg').textContent='Nudges saved ✓ — checked hourly in your timezone ('+row.tz+').';
 }
 
 /* ---- PWA ---- */
