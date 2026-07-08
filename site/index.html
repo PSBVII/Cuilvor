@@ -40,8 +40,8 @@
   .logo i{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   .navcta{font-size:13.5px;font-weight:600;color:#06110c;background:var(--grad);padding:9px 18px;border-radius:99px;text-decoration:none;transition:transform .25s}
   .navcta:hover{transform:scale(1.05)}
-  .navlink{font-size:13.5px;color:var(--dim);text-decoration:none}
-  @media(max-width:640px){.navlink{display:none}}
+  .navlink{font-size:13.5px;color:var(--dim);text-decoration:none;white-space:nowrap}
+  @media(max-width:640px){.navlink{font-size:12px}.navlink.hidemob{display:none}.navcta{padding:8px 13px;font-size:12.5px}nav .wrap{gap:6px;padding:0 14px}.logo{font-size:18px}}
 
   /* hero */
   header{position:relative;min-height:min(100svh,880px);display:flex;align-items:center;z-index:1}
@@ -138,7 +138,7 @@
   <div class="logo">cuil<i>vor</i></div>
   <span style="margin-left:auto;display:flex;align-items:center;gap:20px">
     <a href="product-tour.html" class="navlink">See inside ↗</a>
-    <a href="compare/" class="navlink">Compare</a>
+    <a href="compare/" class="navlink hidemob">Compare</a>
     <a href="app/" style="font-size:13.5px;color:var(--dim);text-decoration:none;white-space:nowrap">Sign in</a>
     <a class="navcta" href="#join">Get early access</a>
   </span>
