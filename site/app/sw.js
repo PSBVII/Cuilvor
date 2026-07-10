@@ -1,5 +1,5 @@
 // Cuilvor service worker: cache the shell, network-first for freshness
-const C = 'cuilvor-v6';
+const C = 'cuilvor-v7';
 self.addEventListener('install', e => { self.skipWaiting();
   e.waitUntil(caches.open(C).then(c => c.addAll(['/app/', '/app/manifest.json']))); });
 self.addEventListener('activate', e => {

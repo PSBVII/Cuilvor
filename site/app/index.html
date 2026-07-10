@@ -728,16 +728,34 @@ async function saveCoachPrefs(){
 }
 /* ---- wearables ---- */
 const VENDORS=[['oura','Oura Ring'],['whoop','Whoop'],['strava','Strava'],['withings','Withings'],['polar','Polar'],['garmin','Garmin'],['apple_health','Apple Health']];
+const CONNECTABLE=['whoop','strava','oura','withings'];
 async function loadWearables(){
   const {data}=await db.from('v_health_wearables').select('provider,status,last_sync');
   const st={};(data||[]).forEach(w=>st[w.provider]=w);
   $('wearlist').innerHTML=VENDORS.map(([k,label])=>{
     const w=st[k];
-    const badge=w&&w.status==='active'?`<span class="pill p-ok">connected${w.last_sync?' · synced '+new Date(w.last_sync).toLocaleDateString():''}</span>`
-      :(k==='apple_health'?'<span class="pill p-dim">via the native app — coming</span>':'<span class="pill p-dim">coming soon</span>');
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#0a120f;border:1px solid var(--line);border-radius:12px"><span>${label}</span>${badge}</div>`;
+    let right;
+    if(w&&w.status==='active') right=`<span class="pill p-ok">connected${w.last_sync?' · synced '+new Date(w.last_sync).toLocaleDateString(undefined,{day:'numeric',month:'short'}):''}</span>`;
+    else if(w&&w.status==='error') right=`<button class="btn ghost" style="padding:6px 14px;font-size:12.5px" onclick="connectWearable('${k}')">Reconnect</button>`;
+    else if(CONNECTABLE.includes(k)) right=`<button class="btn ghost" style="padding:6px 14px;font-size:12.5px" onclick="connectWearable('${k}')">Connect</button>`;
+    else if(k==='apple_health') right='<span class="pill p-dim">via the native app — coming</span>';
+    else right='<span class="pill p-dim">coming soon</span>';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#0a120f;border:1px solid var(--line);border-radius:12px"><span>${label}</span>${right}</div>`;
   }).join('');
 }
+async function connectWearable(provider){
+  try{
+    const {data,error}=await db.functions.invoke('wearable-oauth',{body:{provider}});
+    if(error){ const pe=await fnErr(error); alert(pe.message||'Could not start — try again.'); return; }
+    const d=data||{};
+    if(d.error){ alert(d.message||d.error); return; }
+    if(d.url) location.href=d.url;
+  }catch(e){ alert(e.message||'Could not start — try again.'); }
+}
+(function(){ const q=new URLSearchParams(location.search);
+  if(q.get('connected')){ history.replaceState(null,'',location.pathname); setTimeout(()=>alert('✓ '+q.get('connected').replace('_',' ')+' connected! Data syncs hourly — first numbers land within the hour.'),600); }
+  if(q.get('wearable_error')){ history.replaceState(null,'',location.pathname); setTimeout(()=>alert('Connection hiccup: '+q.get('wearable_error')+' — try again from Settings.'),600); }
+})();
 /* ---- PWA ---- */
 if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
 
