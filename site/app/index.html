@@ -518,16 +518,31 @@ async function saveKey(){
 }
 
 /* ---- photo meal logging ---- */
+async function shrinkPhoto(f){
+  // downscale to max 1568px + JPEG-compress; vision AI needs nowhere near full camera resolution
+  const bmp=await createImageBitmap(f).catch(()=>null);
+  if(!bmp) return null;
+  const MAX=1568, scale=Math.min(1, MAX/Math.max(bmp.width,bmp.height));
+  const w=Math.round(bmp.width*scale), h=Math.round(bmp.height*scale);
+  const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+  cv.getContext('2d').drawImage(bmp,0,0,w,h);
+  for(const q of [0.82,0.65,0.5]){
+    const url=cv.toDataURL('image/jpeg',q);
+    if(url.length<2_600_000) return url.split(',')[1];
+  }
+  return null;
+}
 async function photoLog(inp){
   const f=inp.files&&inp.files[0]; inp.value=''; if(!f)return;
-  if(!['image/jpeg','image/png','image/webp'].includes(f.type)){ $('logmsg').className='msg err'; $('logmsg').textContent='Use a JPEG, PNG or WebP photo.'; return; }
-  if(f.size>2*1024*1024){ $('logmsg').className='msg err'; $('logmsg').textContent='Photo too big — keep under 2MB.'; return; }
-  const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});
+  if(!f.type.startsWith('image/')){ $('logmsg').className='msg err'; $('logmsg').textContent='That doesn\'t look like a photo.'; return; }
+  $('logmsg').className='msg'; $('logmsg').textContent='Preparing photo…';
+  const b64=await shrinkPhoto(f);
+  if(!b64){ $('logmsg').className='msg err'; $('logmsg').textContent='Couldn\'t process that photo — try another.'; return; }
   const btn=$('photobtn'); btn.disabled=true; btn.textContent='Reading plate…';
   $('logmsg').className='msg'; $('logmsg').textContent=''; $('logchips').innerHTML='';
   try{
     const {data,error}=await Promise.race([
-      db.functions.invoke('parse-log',{body:{image:{data:b64,media_type:f.type},text:$('logtext').value.trim(),local_date:localDay()}}),
+      db.functions.invoke('parse-log',{body:{image:{data:b64,media_type:'image/jpeg'},text:$('logtext').value.trim(),local_date:localDay()}}),
       new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timed out — try again.')),90000))]);
     if(error){
       const pe=await fnErr(error);
