@@ -333,6 +333,10 @@ document.getElementById('loading').style.display='block';
 const $=id=>document.getElementById(id);
 const fmt=(n,d=1)=>n==null?'—':(+n).toFixed(d).replace(/\.0$/,'');
 let db=null,charts={},isHH=false;
+async function fnErr(error){
+  try{ if(error&&error.context&&error.context.text){ const j=JSON.parse(await error.context.text())||{}; return {code:j.error||'', message:j.message||j.error||error.message}; } }catch(_){}
+  return {code:'', message:(error&&error.message)||'Request failed'};
+}
 async function loadHH(){
   for(let i=0;i<3;i++){
     try{
@@ -393,16 +397,18 @@ async function quickLog(){
       new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timed out — try again.')),60000))
     ]);
     if(error){
-      let detail=''; try{ if(error.context&&error.context.text) detail=(JSON.parse(await error.context.text())||{}).message||''; }catch(_){}
-      throw new Error(detail||error.message);
+      const pe=await fnErr(error);
+      if(pe.code==='no_key'){
+        if(isHH){ const {error:re}=await db.rpc('log_health_entry',{p_raw:t,p_type:'note'});
+          if(!re){ $('logmsg').textContent='Logged ✓ — your household coach will parse this (it appears after the next review, or ask Claude anytime).'; $('logtext').value=''; }
+          else { $('logmsg').className='msg err'; $('logmsg').textContent=re.message; }
+          return; }
+        $('logmsg').className='msg err'; $('logmsg').textContent='Add your AI key in Settings first — then logging parses itself.'; return;
+      }
+      if(pe.code==='rate_limited'){ $('logmsg').textContent=pe.message; return; }
+      throw new Error(pe.message);
     }
     const d=data||{};
-    if(d.error==='no_key'){
-      if(isHH){ const {error:re}=await db.rpc('log_health_entry',{p_raw:t,p_type:'note'});
-        if(!re){ $('logmsg').textContent='Logged ✓ — your household coach will parse this (it appears after the next review, or ask Claude anytime).'; $('logtext').value=''; }
-        else { $('logmsg').className='msg err'; $('logmsg').textContent=re.message; }
-        return; }
-      $('logmsg').className='msg err'; $('logmsg').textContent='Add your AI key in Settings first — then logging parses itself.'; return; }
     const p=d.parsed||{};
     const chips=[];
     (p.meals||[]).forEach(m=>chips.push(`<span class="chip"><b>${esc(m.food)}</b>${n2(m.kcal)?` ${Math.round(n2(m.kcal))} kcal`:''}${n2(m.protein_g)?` · ${Math.round(n2(m.protein_g))}g P`:''}</span>`));
@@ -430,10 +436,13 @@ async function runReview(){
       db.functions.invoke('weekly-review',{body:{week_start:localMonday()}}),
       new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timed out — try again.')),90000))
     ]);
-    if(error){ let dd=''; try{ if(error.context&&error.context.text) dd=(JSON.parse(await error.context.text())||{}).message||''; }catch(_){} throw new Error(dd||error.message); }
+    if(error){
+      const pe=await fnErr(error);
+      if(pe.code==='no_key'){ $('rmsg').className='msg'; $('rmsg').textContent=isHH?'Your review is written by the household coach every Sunday — it appears right here. (Add your own key in Settings if you want on-demand reviews too.)':'Add your AI key in Settings to unlock coaching.'; return; }
+      if(pe.code==='cooldown'){ $('rmsg').textContent=pe.message; return; }
+      throw new Error(pe.message);
+    }
     const d=data||{};
-    if(d.error==='no_key'){ $('rmsg').className='msg'; $('rmsg').textContent=isHH?'Your review is written by the household coach every Sunday — it appears right here. (Add your own key in Settings if you want on-demand reviews too.)':'Add your AI key in Settings to unlock coaching.'; return; }
-    if(d.error==='cooldown'){ $('rmsg').textContent=d.message; return; }
     renderReview({full_report:d.report,week_start:d.week_start||localMonday()});
   }catch(e){ $('rmsg').className='msg err'; $('rmsg').textContent=e.message||'Review failed — try again.'; }
   finally{ btn.disabled=false; btn.textContent='Run my review now'; }
@@ -520,9 +529,13 @@ async function photoLog(inp){
     const {data,error}=await Promise.race([
       db.functions.invoke('parse-log',{body:{image:{data:b64,media_type:f.type},text:$('logtext').value.trim(),local_date:localDay()}}),
       new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timed out — try again.')),90000))]);
-    if(error){let dd='';try{if(error.context&&error.context.text)dd=(JSON.parse(await error.context.text())||{}).message||'';}catch(_){ } throw new Error(dd||error.message);}
+    if(error){
+      const pe=await fnErr(error);
+      if(pe.code==='no_key'){ $('logmsg').className='msg err'; $('logmsg').textContent=isHH?'Photo parsing runs on the household coach — share the photo with Claude in chat, or add your own key in Settings for instant parsing.':'Add your AI key in Settings first.'; return; }
+      if(pe.code==='rate_limited'){ $('logmsg').textContent=pe.message; return; }
+      throw new Error(pe.message);
+    }
     const d=data||{};
-    if(d.error==='no_key'){ $('logmsg').className='msg err'; $('logmsg').textContent=isHH?'Photo parsing runs on the household coach — share the photo with Claude in chat, or add your own key in Settings for instant parsing.':'Add your AI key in Settings first.'; return; }
     const chips=((d.parsed||{}).meals||[]).map(m=>`<span class="chip"><b>${esc(m.food)}</b>${n2(m.kcal)?` ${Math.round(n2(m.kcal))} kcal`:''}</span>`);
     $('logchips').innerHTML=chips.join('');
     $('logmsg').textContent=`Photo logged ✓ — ${d.summary?d.summary.kcal+' kcal, '+d.summary.protein_g+'g protein':''}`;
@@ -538,10 +551,13 @@ async function wod(request){
     const {data,error}=await Promise.race([
       db.functions.invoke('workout-of-day',{body:{request:request||undefined}}),
       new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timed out — try again.')),90000))]);
-    if(error){let dd='';try{if(error.context&&error.context.text)dd=(JSON.parse(await error.context.text())||{}).message||'';}catch(_){ } throw new Error(dd||error.message);}
+    if(error){
+      const pe=await fnErr(error);
+      if(pe.code==='no_key'){ $('wodmsg').className='msg'; $('wodmsg').textContent=isHH?'On-demand workouts need an AI key — or just ask the household Claude for today\'s session. Your plan and history live here either way.':'Add your AI key in Settings to unlock the workout coach.'; return; }
+      if(pe.code==='rate_limited'){ $('wodmsg').textContent=pe.message; return; }
+      throw new Error(pe.message);
+    }
     const d=data||{};
-    if(d.error==='no_key'){ $('wodmsg').className='msg'; $('wodmsg').textContent=isHH?'On-demand workouts need an AI key — or just ask the household Claude for today\'s session. Your plan and history live here either way.':'Add your AI key in Settings to unlock the workout coach.'; return; }
-    if(d.error){ $('wodmsg').className='msg err'; $('wodmsg').textContent=d.message||d.error; return; }
     const w=d.workout; $('wodmsg').textContent='';
     $('wodout').style.display='block';
     $('wodtype').textContent=(w.session_type||'').replace('_',' ')+' · ~'+w.duration_min+' min';
